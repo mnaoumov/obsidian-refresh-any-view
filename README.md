@@ -20,7 +20,7 @@ Also the plugin adds the `Refresh Preview: Refresh` command to the command palet
 
 ## Installation
 
-- `Refresh Preview` is available on [the official Community Plugins repository](https://obsidian.md/plugins).
+- `Refresh Preview` is available on [the official Community Plugins repository](https://obsidian.md/plugins?id=refresh-preview).
 - Beta releases can be installed through [BRAT](https://github.com/TfTHacker/obsidian42-brat).
 
 ## Support
