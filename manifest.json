@@ -6,5 +6,6 @@
   "description": "Allows to refresh preview mode without reopening the note",
   "author": "mnaoumov",
   "authorUrl": "https://github.com/mnaoumov/",
-  "isDesktopOnly": false
+  "isDesktopOnly": false,
+  "fundingUrl": "https://www.buymeacoffee.com/mnaoumov"
 }
