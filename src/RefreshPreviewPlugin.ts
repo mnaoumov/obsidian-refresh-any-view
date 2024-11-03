@@ -3,25 +3,25 @@ import {
   Plugin,
   setIcon,
   setTooltip
-} from "obsidian";
+} from 'obsidian';
 
 export default class RefreshPreviewPlugin extends Plugin {
   public override onload(): void {
     this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
     this.addCommand({
-      id: "refresh-preview",
-      name: "Refresh",
+      id: 'refresh-preview',
+      name: 'Refresh',
       checkCallback: this.refreshPreview.bind(this)
     });
 
     this.registerEvent(
-      this.app.workspace.on("layout-change", () => {
+      this.app.workspace.on('layout-change', () => {
         this.addRefreshPreviewButton();
       })
     );
 
-    this.registerDomEvent(document, "click", (event: MouseEvent): void => {
-      if (event.target instanceof HTMLElement && event.target.matches(".refresh-preview-button")) {
+    this.registerDomEvent(document, 'click', (event: MouseEvent): void => {
+      if (event.target instanceof HTMLElement && event.target.matches('.refresh-preview-button')) {
         this.refreshPreview(false);
       }
     });
@@ -34,7 +34,7 @@ export default class RefreshPreviewPlugin extends Plugin {
 
   private refreshPreview(checking: boolean): boolean {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (view?.getMode() !== "preview") {
+    if (view?.getMode() !== 'preview') {
       return false;
     }
 
@@ -50,7 +50,7 @@ export default class RefreshPreviewPlugin extends Plugin {
       return;
     }
 
-    if (view.getMode() !== "preview") {
+    if (view.getMode() !== 'preview') {
       this.removeRefreshPreviewButtonFromView(view);
       return;
     }
@@ -66,27 +66,27 @@ export default class RefreshPreviewPlugin extends Plugin {
       return;
     }
 
-    refreshPreviewButton = createEl("button", {
-      cls: "refresh-preview-button clickable-icon view-action"
+    refreshPreviewButton = createEl('button', {
+      cls: 'refresh-preview-button clickable-icon view-action'
     });
-    setIcon(refreshPreviewButton, "refresh-cw");
-    setTooltip(refreshPreviewButton, "Refresh preview");
+    setIcon(refreshPreviewButton, 'refresh-cw');
+    setTooltip(refreshPreviewButton, 'Refresh preview');
 
     actionsContainer.prepend(refreshPreviewButton);
   }
 
   private getRefreshPreviewButton(actionsContainer: Element): HTMLButtonElement | null {
-    return actionsContainer.querySelector<HTMLButtonElement>(".refresh-preview-button");
+    return actionsContainer.querySelector<HTMLButtonElement>('.refresh-preview-button');
   }
 
   private removeRefreshPreviewButton(): void {
-    for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
+    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
       this.removeRefreshPreviewButtonFromView(leaf.view as MarkdownView);
     }
   }
 
   private getActionsContainer(view: MarkdownView): Element | null {
-    return view.containerEl.querySelector(".view-header .view-actions");
+    return view.containerEl.querySelector('.view-header .view-actions');
   }
 
   private removeRefreshPreviewButtonFromView(view: MarkdownView): void {

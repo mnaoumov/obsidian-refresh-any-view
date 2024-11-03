@@ -29,4 +29,4 @@ Also the plugin adds the `Refresh Preview: Refresh` command to the command palet
 
 ## License
 
- © [Michael Naumov](https://github.com/mnaoumov/)
+© [Michael Naumov](https://github.com/mnaoumov/)

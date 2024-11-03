@@ -1,1 +1,1 @@
-export { default } from "./RefreshPreviewPlugin.ts";
+export { default } from './RefreshPreviewPlugin.ts';
