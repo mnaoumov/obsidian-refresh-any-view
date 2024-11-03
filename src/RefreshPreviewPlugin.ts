@@ -4,6 +4,7 @@ import {
   setIcon,
   setTooltip
 } from 'obsidian';
+import { convertAsyncToSync } from 'obsidian-dev-utils/Async';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
 export default class RefreshPreviewPlugin extends PluginBase<object> {
@@ -33,7 +34,7 @@ export default class RefreshPreviewPlugin extends PluginBase<object> {
         this.refreshPreview(false);
       }
     });
-    this.register(this.removeRefreshPreviewButton.bind(this));
+    this.register(convertAsyncToSync(this.removeRefreshPreviewButton));
   }
 
   protected override onLayoutReady(): void {
@@ -87,8 +88,9 @@ export default class RefreshPreviewPlugin extends PluginBase<object> {
     return actionsContainer.querySelector<HTMLButtonElement>('.refresh-preview-button');
   }
 
-  private removeRefreshPreviewButton(): void {
+  private async removeRefreshPreviewButton(): Promise<void> {
     for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+      await leaf.loadIfDeferred();
       this.removeRefreshPreviewButtonFromView(leaf.view as MarkdownView);
     }
   }
