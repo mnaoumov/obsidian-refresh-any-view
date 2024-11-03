@@ -1,13 +1,21 @@
 import {
   MarkdownView,
-  Plugin,
+  PluginSettingTab,
   setIcon,
   setTooltip
 } from 'obsidian';
+import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
-export default class RefreshPreviewPlugin extends Plugin {
-  public override onload(): void {
-    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+export default class RefreshPreviewPlugin extends PluginBase<object> {
+  protected override createDefaultPluginSettings(): object {
+    return {};
+  }
+
+  protected override createPluginSettingsTab(): PluginSettingTab | null {
+    return null;
+  }
+
+  protected override onloadComplete(): void {
     this.addCommand({
       id: 'refresh-preview',
       name: 'Refresh',
@@ -28,7 +36,7 @@ export default class RefreshPreviewPlugin extends Plugin {
     this.register(this.removeRefreshPreviewButton.bind(this));
   }
 
-  private onLayoutReady(): void {
+  protected override onLayoutReady(): void {
     this.addRefreshPreviewButton();
   }
 
