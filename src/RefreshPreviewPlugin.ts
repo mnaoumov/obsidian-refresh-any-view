@@ -2,18 +2,26 @@ import {
   MarkdownView,
   PluginSettingTab,
   setIcon,
-  setTooltip
+  setTooltip,
+  TAbstractFile
 } from 'obsidian';
-import { convertAsyncToSync } from 'obsidian-dev-utils/Async';
+import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
+import {
+  isFile,
+  isMarkdownFile
+} from 'obsidian-dev-utils/obsidian/FileSystem';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
-export default class RefreshPreviewPlugin extends PluginBase<object> {
-  protected override createDefaultPluginSettings(): object {
-    return {};
+import { RefreshPreviewPluginSettings } from './RefreshPreviewPluginSettings.ts';
+import { RefreshPreviewPluginSettingsTab } from './RefreshPreviewPluginSettingsTab.ts';
+
+export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSettings> {
+  protected override createDefaultPluginSettings(): RefreshPreviewPluginSettings {
+    return new RefreshPreviewPluginSettings();
   }
 
   protected override createPluginSettingsTab(): PluginSettingTab | null {
-    return null;
+    return new RefreshPreviewPluginSettingsTab(this);
   }
 
   protected override onloadComplete(): void {
@@ -31,19 +39,29 @@ export default class RefreshPreviewPlugin extends PluginBase<object> {
 
     this.registerDomEvent(document, 'click', (event: MouseEvent): void => {
       if (event.target instanceof HTMLElement && event.target.matches('.refresh-preview-button')) {
-        this.refreshPreview(false);
+        this.refreshPreview();
       }
     });
-    this.register(convertAsyncToSync(this.removeRefreshPreviewButton));
+    this.register(() => {
+      invokeAsyncSafely(() => this.removeRefreshPreviewButton());
+    });
+    this.registerEvent(this.app.vault.on('modify', this.handleModify.bind(this)));
   }
 
   protected override onLayoutReady(): void {
     this.addRefreshPreviewButton();
   }
 
-  private refreshPreview(checking: boolean): boolean {
-    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (view?.getMode() !== 'preview') {
+  private refreshPreview(checking = false, view?: MarkdownView): boolean {
+    if (!view) {
+      const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+      if (!activeView) {
+        return false;
+      }
+      view = activeView;
+    }
+
+    if (view.getMode() !== 'preview') {
       return false;
     }
 
@@ -110,6 +128,26 @@ export default class RefreshPreviewPlugin extends PluginBase<object> {
 
     if (refreshPreviewButton) {
       actionsContainer.removeChild(refreshPreviewButton);
+    }
+  }
+
+  private handleModify(file: TAbstractFile): void {
+    if (!this.settings.autoRefreshOnFileChange) {
+      return;
+    }
+
+    if (!isFile(file)) {
+      return;
+    }
+
+    if (!isMarkdownFile(file)) {
+      return;
+    }
+
+    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+      if (leaf.view instanceof MarkdownView && leaf.view.file?.path === file.path) {
+        this.refreshPreview(false, leaf.view);
+      }
     }
   }
 }
