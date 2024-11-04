@@ -18,6 +18,10 @@ The plugin adds a `Refresh Preview` button:
 
 Also the plugin adds the `Refresh Preview: Refresh` command to the command palette.
 
+The plugin allows to configure auto refresh on file change.
+
+The plugin allows to configure auto refresh within a given time interval.
+
 ## Installation
 
 - `Refresh Preview` is available on [the official Community Plugins repository](https://obsidian.md/plugins?id=refresh-preview).
