@@ -16,6 +16,8 @@ import { RefreshPreviewPluginSettings } from './RefreshPreviewPluginSettings.ts'
 import { RefreshPreviewPluginSettingsTab } from './RefreshPreviewPluginSettingsTab.ts';
 
 export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSettings> {
+  private autoRefreshIntervalId: number | null = null;
+
   protected override createDefaultPluginSettings(): RefreshPreviewPluginSettings {
     return new RefreshPreviewPluginSettings();
   }
@@ -50,6 +52,12 @@ export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPlugi
 
   protected override onLayoutReady(): void {
     this.addRefreshPreviewButton();
+    this.registerAutoRefreshTimer();
+  }
+
+  public override async saveSettings(newSettings: RefreshPreviewPluginSettings): Promise<void> {
+    await super.saveSettings(newSettings);
+    this.registerAutoRefreshTimer();
   }
 
   private refreshPreview(checking = false, view?: MarkdownView): boolean {
@@ -149,5 +157,22 @@ export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPlugi
         this.refreshPreview(false, leaf.view);
       }
     }
+  }
+
+  private registerAutoRefreshTimer(): void {
+    if (this.autoRefreshIntervalId) {
+      clearInterval(this.autoRefreshIntervalId);
+      this.autoRefreshIntervalId = null;
+    }
+
+    if (this.settings.autoRefreshIntervalInSeconds === 0) {
+      return;
+    }
+
+    this.autoRefreshIntervalId = window.setInterval(() => {
+      this.refreshPreview(false);
+    }, this.settings.autoRefreshIntervalInSeconds * 1000);
+
+    this.registerInterval(this.autoRefreshIntervalId);
   }
 }
