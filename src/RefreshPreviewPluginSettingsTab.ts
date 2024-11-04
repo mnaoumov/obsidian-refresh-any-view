@@ -20,7 +20,6 @@ export class RefreshPreviewPluginSettingsTab extends PluginSettingsTabBase<Refre
           pluginSettingsToComponentValueConverter: (pluginSettingsValue: number) => pluginSettingsValue.toString(),
           componentToPluginSettingsValueConverter: (uiValue: string) => parseInt(uiValue, 10),
           valueValidator() {
-            text.inputEl.checkValidity
             if (isNaN(text.inputEl.valueAsNumber)) {
               return 'Please enter a numeric value';
             }
@@ -28,7 +27,7 @@ export class RefreshPreviewPluginSettingsTab extends PluginSettingsTabBase<Refre
               return 'Value cannot be negative';
             }
             return null;
-          },
+          }
         });
         text.inputEl.type = 'number';
         text.inputEl.min = '0';
