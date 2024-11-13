@@ -1,4 +1,4 @@
 export class RefreshPreviewPluginSettings {
-  public autoRefreshOnFileChange = false;
   public autoRefreshIntervalInSeconds = 0;
+  public autoRefreshOnFileChange = false;
 }

@@ -17,8 +17,8 @@ export class RefreshPreviewPluginSettingsTab extends PluginSettingsTabBase<Refre
       .setDesc('Set to 0 to disable auto refresh')
       .addText((text) => {
         bindValueComponent(this.plugin, text, 'autoRefreshIntervalInSeconds', {
-          pluginSettingsToComponentValueConverter: (pluginSettingsValue: number) => pluginSettingsValue.toString(),
           componentToPluginSettingsValueConverter: (uiValue: string) => parseInt(uiValue, 10),
+          pluginSettingsToComponentValueConverter: (pluginSettingsValue: number) => pluginSettingsValue.toString(),
           valueValidator() {
             if (isNaN(text.inputEl.valueAsNumber)) {
               return 'Please enter a numeric value';

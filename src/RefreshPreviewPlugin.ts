@@ -16,21 +16,26 @@ import { RefreshPreviewPluginSettings } from './RefreshPreviewPluginSettings.ts'
 import { RefreshPreviewPluginSettingsTab } from './RefreshPreviewPluginSettingsTab.ts';
 
 export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSettings> {
-  private autoRefreshIntervalId: number | null = null;
+  private autoRefreshIntervalId: null | number = null;
 
   protected override createDefaultPluginSettings(): RefreshPreviewPluginSettings {
     return new RefreshPreviewPluginSettings();
   }
 
-  protected override createPluginSettingsTab(): PluginSettingTab | null {
+  protected override createPluginSettingsTab(): null | PluginSettingTab {
     return new RefreshPreviewPluginSettingsTab(this);
+  }
+
+  protected override onLayoutReady(): void {
+    this.addRefreshPreviewButton();
+    this.registerAutoRefreshTimer();
   }
 
   protected override onloadComplete(): void {
     this.addCommand({
+      checkCallback: this.refreshPreview.bind(this),
       id: 'refresh-preview',
-      name: 'Refresh',
-      checkCallback: this.refreshPreview.bind(this)
+      name: 'Refresh'
     });
 
     this.registerEvent(
@@ -48,35 +53,6 @@ export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPlugi
       invokeAsyncSafely(() => this.removeRefreshPreviewButton());
     });
     this.registerEvent(this.app.vault.on('modify', this.handleModify.bind(this)));
-  }
-
-  protected override onLayoutReady(): void {
-    this.addRefreshPreviewButton();
-    this.registerAutoRefreshTimer();
-  }
-
-  public override async saveSettings(newSettings: RefreshPreviewPluginSettings): Promise<void> {
-    await super.saveSettings(newSettings);
-    this.registerAutoRefreshTimer();
-  }
-
-  private refreshPreview(checking = false, view?: MarkdownView): boolean {
-    if (!view) {
-      const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-      if (!activeView) {
-        return false;
-      }
-      view = activeView;
-    }
-
-    if (view.getMode() !== 'preview') {
-      return false;
-    }
-
-    if (!checking) {
-      view.previewMode.rerender(true);
-    }
-    return true;
   }
 
   private addRefreshPreviewButton(): void {
@@ -110,33 +86,12 @@ export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPlugi
     actionsContainer.prepend(refreshPreviewButton);
   }
 
-  private getRefreshPreviewButton(actionsContainer: Element): HTMLButtonElement | null {
-    return actionsContainer.querySelector<HTMLButtonElement>('.refresh-preview-button');
-  }
-
-  private async removeRefreshPreviewButton(): Promise<void> {
-    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
-      await leaf.loadIfDeferred();
-      this.removeRefreshPreviewButtonFromView(leaf.view as MarkdownView);
-    }
-  }
-
   private getActionsContainer(view: MarkdownView): Element | null {
     return view.containerEl.querySelector('.view-header .view-actions');
   }
 
-  private removeRefreshPreviewButtonFromView(view: MarkdownView): void {
-    const actionsContainer = this.getActionsContainer(view);
-
-    if (!actionsContainer) {
-      return;
-    }
-
-    const refreshPreviewButton = this.getRefreshPreviewButton(actionsContainer);
-
-    if (refreshPreviewButton) {
-      actionsContainer.removeChild(refreshPreviewButton);
-    }
+  private getRefreshPreviewButton(actionsContainer: Element): HTMLButtonElement | null {
+    return actionsContainer.querySelector<HTMLButtonElement>('.refresh-preview-button');
   }
 
   private handleModify(file: TAbstractFile): void {
@@ -159,6 +114,25 @@ export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPlugi
     }
   }
 
+  private refreshPreview(checking = false, view?: MarkdownView): boolean {
+    if (!view) {
+      const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+      if (!activeView) {
+        return false;
+      }
+      view = activeView;
+    }
+
+    if (view.getMode() !== 'preview') {
+      return false;
+    }
+
+    if (!checking) {
+      view.previewMode.rerender(true);
+    }
+    return true;
+  }
+
   private registerAutoRefreshTimer(): void {
     if (this.autoRefreshIntervalId) {
       clearInterval(this.autoRefreshIntervalId);
@@ -174,5 +148,31 @@ export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPlugi
     }, this.settings.autoRefreshIntervalInSeconds * 1000);
 
     this.registerInterval(this.autoRefreshIntervalId);
+  }
+
+  private async removeRefreshPreviewButton(): Promise<void> {
+    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+      await leaf.loadIfDeferred();
+      this.removeRefreshPreviewButtonFromView(leaf.view as MarkdownView);
+    }
+  }
+
+  private removeRefreshPreviewButtonFromView(view: MarkdownView): void {
+    const actionsContainer = this.getActionsContainer(view);
+
+    if (!actionsContainer) {
+      return;
+    }
+
+    const refreshPreviewButton = this.getRefreshPreviewButton(actionsContainer);
+
+    if (refreshPreviewButton) {
+      actionsContainer.removeChild(refreshPreviewButton);
+    }
+  }
+
+  public override async saveSettings(newSettings: RefreshPreviewPluginSettings): Promise<void> {
+    await super.saveSettings(newSettings);
+    this.registerAutoRefreshTimer();
   }
 }
