@@ -1,6 +1,6 @@
 import { Setting } from 'obsidian';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
-import { bindValueComponent } from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
+import { extend } from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
 
 import type RefreshPreviewPlugin from './RefreshPreviewPlugin.ts';
 
@@ -10,13 +10,13 @@ export class RefreshPreviewPluginSettingsTab extends PluginSettingsTabBase<Refre
 
     new Setting(this.containerEl)
       .setName('Auto refresh on file change')
-      .addToggle((toggle) => bindValueComponent(this.plugin, toggle, 'autoRefreshOnFileChange'));
+      .addToggle((toggle) => extend(toggle).bind(this.plugin, 'autoRefreshOnFileChange'));
 
     new Setting(this.containerEl)
       .setName('Auto refresh interval (seconds)')
       .setDesc('Set to 0 to disable auto refresh')
       .addText((text) => {
-        bindValueComponent(this.plugin, text, 'autoRefreshIntervalInSeconds', {
+        extend(text).bind(this.plugin, 'autoRefreshIntervalInSeconds', {
           componentToPluginSettingsValueConverter: (uiValue: string) => parseInt(uiValue, 10),
           pluginSettingsToComponentValueConverter: (pluginSettingsValue: number) => pluginSettingsValue.toString(),
           valueValidator() {
