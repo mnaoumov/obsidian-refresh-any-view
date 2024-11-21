@@ -15,7 +15,7 @@ import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { RefreshPreviewPluginSettings } from './RefreshPreviewPluginSettings.ts';
 import { RefreshPreviewPluginSettingsTab } from './RefreshPreviewPluginSettingsTab.ts';
 
-export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSettings> {
+export class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSettings> {
   private autoRefreshIntervalId: null | number = null;
 
   public override async saveSettings(newSettings: RefreshPreviewPluginSettings): Promise<void> {
