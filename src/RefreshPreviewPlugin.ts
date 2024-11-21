@@ -18,6 +18,11 @@ import { RefreshPreviewPluginSettingsTab } from './RefreshPreviewPluginSettingsT
 export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSettings> {
   private autoRefreshIntervalId: null | number = null;
 
+  public override async saveSettings(newSettings: RefreshPreviewPluginSettings): Promise<void> {
+    await super.saveSettings(newSettings);
+    this.registerAutoRefreshTimer();
+  }
+
   protected override createDefaultPluginSettings(): RefreshPreviewPluginSettings {
     return new RefreshPreviewPluginSettings();
   }
@@ -169,10 +174,5 @@ export default class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPlugi
     if (refreshPreviewButton) {
       actionsContainer.removeChild(refreshPreviewButton);
     }
-  }
-
-  public override async saveSettings(newSettings: RefreshPreviewPluginSettings): Promise<void> {
-    await super.saveSettings(newSettings);
-    this.registerAutoRefreshTimer();
   }
 }
