@@ -23,8 +23,8 @@ export class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSetting
     this.registerAutoRefreshTimer();
   }
 
-  protected override createDefaultPluginSettings(): RefreshPreviewPluginSettings {
-    return new RefreshPreviewPluginSettings();
+  protected override createPluginSettings(data: unknown): RefreshPreviewPluginSettings {
+    return new RefreshPreviewPluginSettings(data);
   }
 
   protected override createPluginSettingsTab(): null | PluginSettingTab {
@@ -108,7 +108,7 @@ export class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSetting
       return;
     }
 
-    if (!isMarkdownFile(file)) {
+    if (!isMarkdownFile(this.app, file)) {
       return;
     }
 

@@ -4,7 +4,7 @@ import { extend } from 'obsidian-dev-utils/obsidian/Plugin/ValueComponent';
 
 import type { RefreshPreviewPlugin } from './RefreshPreviewPlugin.ts';
 
-export class RefreshPreviewPluginSettingsTab extends PluginSettingsTabBase<RefreshPreviewPlugin, object> {
+export class RefreshPreviewPluginSettingsTab extends PluginSettingsTabBase<RefreshPreviewPlugin> {
   public override display(): void {
     this.containerEl.empty();
 
