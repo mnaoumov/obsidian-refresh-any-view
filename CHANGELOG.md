@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0.6
+
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/16.1.0
+
 ## 2.0.5
 
 - https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/15.0.0
