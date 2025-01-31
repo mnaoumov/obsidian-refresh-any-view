@@ -1,8 +1,8 @@
 {
   "id": "refresh-preview",
   "name": "Refresh Preview",
-  "version": "2.0.7",
-  "minAppVersion": "1.7.7",
+  "version": "2.0.8",
+  "minAppVersion": "1.8.3",
   "description": "Allows to refresh preview mode without reopening the note",
   "author": "mnaoumov",
   "authorUrl": "https://github.com/mnaoumov/",
