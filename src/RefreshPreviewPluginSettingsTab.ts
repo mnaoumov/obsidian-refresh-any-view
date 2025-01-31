@@ -18,14 +18,14 @@ export class RefreshPreviewPluginSettingsTab extends PluginSettingsTabBase<Refre
         this.bind(text, 'autoRefreshIntervalInSeconds', {
           componentToPluginSettingsValueConverter: (uiValue: string) => parseInt(uiValue, 10),
           pluginSettingsToComponentValueConverter: (pluginSettingsValue: number) => pluginSettingsValue.toString(),
-          valueValidator() {
+          // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+          valueValidator(): string | void {
             if (isNaN(text.inputEl.valueAsNumber)) {
               return 'Please enter a numeric value';
             }
             if (text.inputEl.valueAsNumber < 0) {
               return 'Value cannot be negative';
             }
-            return;
           }
         });
         text.inputEl.type = 'number';

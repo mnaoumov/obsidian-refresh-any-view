@@ -119,7 +119,7 @@ export class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSetting
     }
   }
 
-  private refreshPreview(checking = false, view?: MarkdownView): boolean {
+  private refreshPreview(checking?: boolean, view?: MarkdownView): boolean {
     if (!view) {
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!activeView) {
@@ -139,6 +139,7 @@ export class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSetting
   }
 
   private registerAutoRefreshTimer(): void {
+    const MILLISECONDS_IN_SECOND = 1000;
     if (this.autoRefreshIntervalId) {
       clearInterval(this.autoRefreshIntervalId);
       this.autoRefreshIntervalId = null;
@@ -150,7 +151,7 @@ export class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSetting
 
     this.autoRefreshIntervalId = window.setInterval(() => {
       this.refreshPreview(false);
-    }, this.settings.autoRefreshIntervalInSeconds * 1000);
+    }, this.settings.autoRefreshIntervalInSeconds * MILLISECONDS_IN_SECOND);
 
     this.registerInterval(this.autoRefreshIntervalId);
   }
