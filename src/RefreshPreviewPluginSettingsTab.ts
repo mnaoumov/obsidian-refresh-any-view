@@ -19,11 +19,12 @@ export class RefreshPreviewPluginSettingsTab extends PluginSettingsTabBase<Refre
           componentToPluginSettingsValueConverter: (uiValue: string) => parseInt(uiValue, 10),
           pluginSettingsToComponentValueConverter: (pluginSettingsValue: number) => pluginSettingsValue.toString(),
           // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-          valueValidator(): string | void {
-            if (isNaN(text.inputEl.valueAsNumber)) {
+          valueValidator(uiValue: string): string | void {
+            const num = parseInt(uiValue, 10);
+            if (isNaN(num)) {
               return 'Please enter a numeric value';
             }
-            if (text.inputEl.valueAsNumber < 0) {
+            if (num < 0) {
               return 'Value cannot be negative';
             }
           }
