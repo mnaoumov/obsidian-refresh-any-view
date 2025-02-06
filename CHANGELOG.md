@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.0.9
+
+- Fix validation
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/17.8.0
+
 ## 2.0.8
 
 - Lint
