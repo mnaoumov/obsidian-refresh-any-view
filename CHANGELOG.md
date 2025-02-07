@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0.10
+
+- Update BRAT links
+
 ## 2.0.10-beta.1
 
 - Switch to number component
