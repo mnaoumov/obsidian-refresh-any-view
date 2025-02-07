@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.0.10-beta.1
+
+- Switch to number component
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/17.9.1
+
 ## 2.0.9
 
 - Fix validation

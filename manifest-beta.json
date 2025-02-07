@@ -1,0 +1,11 @@
+{
+  "id": "refresh-preview",
+  "name": "Refresh Preview",
+  "version": "2.0.10-beta.1",
+  "minAppVersion": "1.8.4",
+  "description": "Allows to refresh preview mode without reopening the note",
+  "author": "mnaoumov",
+  "authorUrl": "https://github.com/mnaoumov/",
+  "isDesktopOnly": false,
+  "fundingUrl": "https://www.buymeacoffee.com/mnaoumov"
+}
