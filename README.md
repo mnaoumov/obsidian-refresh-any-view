@@ -24,8 +24,8 @@ The plugin allows to configure auto refresh within a given time interval.
 
 ## Installation
 
-- `Refresh Preview` is available on [the official Community Plugins repository](https://obsidian.md/plugins?id=refresh-preview).
-- Beta releases can be installed through [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
+- The plugin is available in [the official Community Plugins repository](https://obsidian.md/plugins?id=refresh-preview).
+- [Beta releases](obsidian://brat?plugin=https://github.com/mnaoumov/obsidian-refresh-preview) can be installed via [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
 
 ## Debugging
 
