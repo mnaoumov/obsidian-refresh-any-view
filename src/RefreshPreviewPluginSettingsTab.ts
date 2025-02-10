@@ -1,4 +1,3 @@
-import { Setting } from 'obsidian';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
 
@@ -8,9 +7,11 @@ export class RefreshPreviewPluginSettingsTab extends PluginSettingsTabBase<Refre
   public override display(): void {
     this.containerEl.empty();
 
-    new Setting(this.containerEl)
+    new SettingEx(this.containerEl)
       .setName('Auto refresh on file change')
-      .addToggle((toggle) => this.bind(toggle, 'autoRefreshOnFileChange'));
+      .addToggle((toggle) => {
+        this.bind(toggle, 'autoRefreshOnFileChange');
+      });
 
     new SettingEx(this.containerEl)
       .setName('Auto refresh interval (seconds)')
