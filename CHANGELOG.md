@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0.14
+
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.0.1
+
 ## 2.0.13
 
 - New template
