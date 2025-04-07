@@ -1,6 +1,5 @@
 import {
   MarkdownView,
-  PluginSettingTab,
   setIcon,
   setTooltip,
   TAbstractFile
@@ -12,23 +11,24 @@ import {
 } from 'obsidian-dev-utils/obsidian/FileSystem';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
-import { RefreshPreviewPluginSettings } from './RefreshPreviewPluginSettings.ts';
-import { RefreshPreviewPluginSettingsTab } from './RefreshPreviewPluginSettingsTab.ts';
+import type { PluginTypes } from './PluginTypes.ts';
 
-export class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSettings> {
+import { PluginSettingsManager } from './PluginSettingsManager.ts';
+import { PluginSettingsTab } from './PluginSettingsTab.ts';
+
+export class Plugin extends PluginBase<PluginTypes> {
   private autoRefreshIntervalId: null | number = null;
 
-  public override async saveSettings(newSettings: RefreshPreviewPluginSettings): Promise<void> {
-    await super.saveSettings(newSettings);
+  public override async onSaveSettings(): Promise<void> {
     this.registerAutoRefreshTimer();
   }
 
-  protected override createPluginSettings(data: unknown): RefreshPreviewPluginSettings {
-    return new RefreshPreviewPluginSettings(data);
+  protected override createPluginSettingsTab(): null | PluginSettingsTab {
+    return new PluginSettingsTab(this);
   }
 
-  protected override createPluginSettingsTab(): null | PluginSettingTab {
-    return new RefreshPreviewPluginSettingsTab(this);
+  protected override createSettingsManager(): PluginSettingsManager {
+    return new PluginSettingsManager(this);
   }
 
   protected override onLayoutReady(): void {
@@ -36,7 +36,8 @@ export class RefreshPreviewPlugin extends PluginBase<RefreshPreviewPluginSetting
     this.registerAutoRefreshTimer();
   }
 
-  protected override onloadComplete(): void {
+  protected override async onloadImpl(): Promise<void> {
+    await super.onloadImpl();
     this.addCommand({
       checkCallback: this.refreshPreview.bind(this),
       id: 'refresh-preview',

@@ -1,4 +1,4 @@
-import { RefreshPreviewPlugin } from './RefreshPreviewPlugin.ts';
+import { Plugin } from './Plugin.ts';
 
 // eslint-disable-next-line import-x/no-default-export
-export default RefreshPreviewPlugin;
+export default Plugin;
