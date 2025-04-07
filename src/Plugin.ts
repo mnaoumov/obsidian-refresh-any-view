@@ -11,6 +11,7 @@ import {
 } from 'obsidian-dev-utils/obsidian/FileSystem';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
+import type { PluginSettings } from './PluginSettings.ts';
 import type { PluginTypes } from './PluginTypes.ts';
 
 import { PluginSettingsManager } from './PluginSettingsManager.ts';
@@ -19,7 +20,8 @@ import { PluginSettingsTab } from './PluginSettingsTab.ts';
 export class Plugin extends PluginBase<PluginTypes> {
   private autoRefreshIntervalId: null | number = null;
 
-  public override async onSaveSettings(): Promise<void> {
+  public override async onSaveSettings(newSettings: PluginSettings, oldSettings: PluginSettings): Promise<void> {
+    await super.onSaveSettings(newSettings, oldSettings);
     this.registerAutoRefreshTimer();
   }
 
@@ -31,7 +33,8 @@ export class Plugin extends PluginBase<PluginTypes> {
     return new PluginSettingsManager(this);
   }
 
-  protected override onLayoutReady(): void {
+  protected override async onLayoutReady(): Promise<void> {
+    await super.onLayoutReady();
     this.addRefreshPreviewButton();
     this.registerAutoRefreshTimer();
   }
