@@ -20,8 +20,8 @@ import { PluginSettingsTab } from './PluginSettingsTab.ts';
 export class Plugin extends PluginBase<PluginTypes> {
   private autoRefreshIntervalId: null | number = null;
 
-  public override async onSaveSettings(newSettings: PluginSettings, oldSettings: PluginSettings): Promise<void> {
-    await super.onSaveSettings(newSettings, oldSettings);
+  public override async onSaveSettings(newSettings: PluginSettings, oldSettings: PluginSettings, context?: unknown): Promise<void> {
+    await super.onSaveSettings(newSettings, oldSettings, context);
     this.registerAutoRefreshTimer();
   }
 
