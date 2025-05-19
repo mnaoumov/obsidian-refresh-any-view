@@ -16,21 +16,23 @@ import type { PluginTypes } from './PluginTypes.ts';
 
 import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
+import type { ReadonlyDeep } from 'type-fest';
+import type { PluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsWrapper';
 
 export class Plugin extends PluginBase<PluginTypes> {
   private autoRefreshIntervalId: null | number = null;
 
-  public override async onSaveSettings(newSettings: PluginSettings, oldSettings: PluginSettings, context?: unknown): Promise<void> {
+  public override async onSaveSettings(newSettings: ReadonlyDeep<PluginSettingsWrapper<PluginSettings>>, oldSettings: ReadonlyDeep<PluginSettingsWrapper<PluginSettings>>, context?: unknown): Promise<void> {
     await super.onSaveSettings(newSettings, oldSettings, context);
     this.registerAutoRefreshTimer();
   }
 
-  protected override createPluginSettingsTab(): null | PluginSettingsTab {
-    return new PluginSettingsTab(this);
-  }
-
   protected override createSettingsManager(): PluginSettingsManager {
     return new PluginSettingsManager(this);
+  }
+
+  protected override createSettingsTab(): null | PluginSettingsTab {
+    return new PluginSettingsTab(this);
   }
 
   protected override async onLayoutReady(): Promise<void> {
