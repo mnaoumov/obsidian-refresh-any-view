@@ -1,4 +1,6 @@
-# Refresh Preview
+# Refresh Any View
+
+(formerly known as `Refresh Preview`, see [Rebranding](#rebranding) section for more details)
 
 This is a plugin for [Obsidian](https://obsidian.md/) that allows to refresh preview mode without reopening the note.
 
@@ -45,6 +47,18 @@ window.DEBUG.enable('refresh-preview');
 ```
 
 For more details, refer to the [documentation](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md).
+
+## Rebranding
+
+This plugin was formerly known as `Refresh Preview`.
+
+The plugin can now refresh any views, not only in preview mode. That's why it got a new name.
+
+However, for the backward compatibility, the previous id `refresh-preview` is still used internally and you might find it
+
+- in plugin folder name;
+- in plugin URL;
+- in [Debugging](#debugging) section;
 
 ## Support
 
