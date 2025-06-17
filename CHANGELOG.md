@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.0.0
+
+- Rebrand
+- Refresh any view
+- Update lib
+
 ## 2.0.19
 
 - Update libs
