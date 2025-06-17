@@ -1,7 +1,7 @@
 {
   "name": "refresh-preview",
   "version": "2.0.19",
-  "description": "An Obsidian plugin that allows to refresh preview mode without reopening the note",
+  "description": "Allows to refresh any view without reopening it.",
   "scripts": {
     "build": "obsidian-dev-utils build",
     "build:clean": "obsidian-dev-utils build:clean",
