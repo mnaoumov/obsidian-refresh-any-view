@@ -14,11 +14,11 @@ dv.span(new Date().toString());
 
 When you switch to the preview mode, the content is rendered once and will rerender only if you change the content of the code block or reopen the note.
 
-The plugin adds a `Refresh Preview` button:
+The plugin adds a `Refresh` button:
 
 ![Demo](images/demo.gif)
 
-Also the plugin adds the `Refresh Preview: Refresh` command to the command palette.
+Also the plugin adds the `Refresh Any View: Refresh active view` command to the command palette.
 
 The plugin allows to configure auto refresh on file change.
 
