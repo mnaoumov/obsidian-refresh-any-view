@@ -1,18 +1,21 @@
+import type {
+  Menu,
+  TAbstractFile,
+  WorkspaceLeaf
+} from 'obsidian';
 import type { PluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsWrapper';
 import type { ReadonlyDeep } from 'type-fest';
 
 import {
-  MarkdownView,
-  setIcon,
-  setTooltip,
-  TAbstractFile
+  FileView,
+  ItemView,
+  TextFileView,
+  View
 } from 'obsidian';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
-import {
-  isFile,
-  isMarkdownFile
-} from 'obsidian-dev-utils/obsidian/FileSystem';
+import { isFile } from 'obsidian-dev-utils/obsidian/FileSystem';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
+import { ViewType } from 'obsidian-typings/implementations';
 
 import type { PluginSettings } from './PluginSettings.ts';
 import type { PluginTypes } from './PluginTypes.ts';
@@ -22,6 +25,7 @@ import { PluginSettingsTab } from './PluginSettingsTab.ts';
 
 export class Plugin extends PluginBase<PluginTypes> {
   private autoRefreshIntervalId: null | number = null;
+  private itemViews = new WeakSet<ItemView>();
 
   public override async onSaveSettings(
     newSettings: ReadonlyDeep<PluginSettingsWrapper<PluginSettings>>,
@@ -42,72 +46,64 @@ export class Plugin extends PluginBase<PluginTypes> {
 
   protected override async onLayoutReady(): Promise<void> {
     await super.onLayoutReady();
-    this.addRefreshPreviewButton();
+    this.handleLayoutChange();
     this.registerAutoRefreshTimer();
   }
 
   protected override async onloadImpl(): Promise<void> {
     await super.onloadImpl();
     this.addCommand({
-      checkCallback: this.refreshPreview.bind(this),
-      id: 'refresh-preview',
-      name: 'Refresh'
+      checkCallback: this.checkRefreshActiveView.bind(this),
+      id: 'refresh-active-view',
+      name: 'Refresh active view'
     });
 
-    this.registerEvent(
-      this.app.workspace.on('layout-change', () => {
-        this.addRefreshPreviewButton();
-      })
-    );
-
-    this.registerDomEvent(document, 'click', (event: MouseEvent): void => {
-      if (event.target instanceof HTMLElement && event.target.matches('.refresh-preview-button')) {
-        this.refreshPreview();
-      }
-    });
-    this.register(() => {
-      invokeAsyncSafely(() => this.removeRefreshPreviewButton());
-    });
+    this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
+    this.registerEvent(this.app.workspace.on('leaf-menu', this.handleLeafMenu.bind(this)));
     this.registerEvent(this.app.vault.on('modify', this.handleModify.bind(this)));
   }
 
-  private addRefreshPreviewButton(): void {
-    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (!view) {
+  private checkRefreshActiveView(checking?: boolean): boolean {
+    const activeView = this.app.workspace.getActiveViewOfType(View);
+    if (!activeView) {
+      return false;
+    }
+
+    if (!checking) {
+      invokeAsyncSafely(() => this.refreshView(activeView));
+    }
+    return true;
+  }
+
+  private handleLayoutChange(): void {
+    const itemView = this.app.workspace.getActiveViewOfType(ItemView);
+    if (!itemView) {
       return;
     }
 
-    if (view.getMode() !== 'preview') {
-      this.removeRefreshPreviewButtonFromView(view);
+    if (this.itemViews.has(itemView)) {
       return;
     }
+    this.itemViews.add(itemView);
 
-    const actionsContainer = this.getActionsContainer(view);
-    if (!actionsContainer) {
-      return;
-    }
-
-    let refreshPreviewButton = this.getRefreshPreviewButton(actionsContainer);
-
-    if (refreshPreviewButton) {
-      return;
-    }
-
-    refreshPreviewButton = createEl('button', {
-      cls: 'refresh-preview-button clickable-icon view-action'
+    const buttonEl = itemView.addAction('refresh-cw', 'Refresh view', () => {
+      invokeAsyncSafely(() => this.refreshView(itemView));
     });
-    setIcon(refreshPreviewButton, 'refresh-cw');
-    setTooltip(refreshPreviewButton, 'Refresh preview');
 
-    actionsContainer.prepend(refreshPreviewButton);
+    this.register(() => {
+      buttonEl.remove();
+    });
   }
 
-  private getActionsContainer(view: MarkdownView): Element | null {
-    return view.containerEl.querySelector('.view-header .view-actions');
-  }
-
-  private getRefreshPreviewButton(actionsContainer: Element): HTMLButtonElement | null {
-    return actionsContainer.querySelector<HTMLButtonElement>('.refresh-preview-button');
+  private handleLeafMenu(menu: Menu, leaf: WorkspaceLeaf): void {
+    menu.addItem((item) => {
+      item.setTitle('Refresh view');
+      item.setIcon('refresh-cw');
+      item.setSection('pane');
+      item.onClick(() => {
+        invokeAsyncSafely(() => this.refreshView(leaf.view));
+      });
+    });
   }
 
   private handleModify(file: TAbstractFile): void {
@@ -119,34 +115,36 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
-    if (!isMarkdownFile(this.app, file)) {
-      return;
-    }
-
-    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
-      if (leaf.view instanceof MarkdownView && leaf.view.file?.path === file.path) {
-        this.refreshPreview(false, leaf.view);
+    const viewsToRefresh = new Set<View>();
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      if (leaf.view instanceof FileView && leaf.view.file === file) {
+        viewsToRefresh.add(leaf.view);
       }
-    }
+    });
+
+    invokeAsyncSafely(async () => {
+      for (const view of viewsToRefresh) {
+        await this.refreshView(view);
+      }
+    });
   }
 
-  private refreshPreview(checking?: boolean, view?: MarkdownView): boolean {
-    if (!view) {
-      const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-      if (!activeView) {
-        return false;
-      }
-      view = activeView;
+  private async refreshView(view: View): Promise<void> {
+    const activeElement = document.activeElement;
+    if (view instanceof TextFileView && view.dirty) {
+      await view.save();
     }
+    const leaf = view.leaf;
+    const viewState = leaf.getViewState();
+    const ephemeralState = leaf.getEphemeralState() as unknown;
+    await leaf.setViewState({ type: ViewType.Empty });
+    await leaf.setViewState(viewState, ephemeralState);
 
-    if (view.getMode() !== 'preview') {
-      return false;
+    if (activeElement instanceof HTMLElement) {
+      const FOCUS_DELAY_IN_MILLISECONDS = 100;
+      await sleep(FOCUS_DELAY_IN_MILLISECONDS);
+      activeElement.focus();
     }
-
-    if (!checking) {
-      view.previewMode.rerender(true);
-    }
-    return true;
   }
 
   private registerAutoRefreshTimer(): void {
@@ -160,31 +158,11 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
-    this.autoRefreshIntervalId = window.setInterval(() => {
-      this.refreshPreview(false);
-    }, this.settings.autoRefreshIntervalInSeconds * MILLISECONDS_IN_SECOND);
+    this.autoRefreshIntervalId = window.setInterval(
+      () => this.checkRefreshActiveView(false),
+      this.settings.autoRefreshIntervalInSeconds * MILLISECONDS_IN_SECOND
+    );
 
     this.registerInterval(this.autoRefreshIntervalId);
-  }
-
-  private async removeRefreshPreviewButton(): Promise<void> {
-    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
-      await leaf.loadIfDeferred();
-      this.removeRefreshPreviewButtonFromView(leaf.view as MarkdownView);
-    }
-  }
-
-  private removeRefreshPreviewButtonFromView(view: MarkdownView): void {
-    const actionsContainer = this.getActionsContainer(view);
-
-    if (!actionsContainer) {
-      return;
-    }
-
-    const refreshPreviewButton = this.getRefreshPreviewButton(actionsContainer);
-
-    if (refreshPreviewButton) {
-      actionsContainer.removeChild(refreshPreviewButton);
-    }
   }
 }
