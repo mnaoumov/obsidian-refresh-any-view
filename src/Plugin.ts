@@ -9,6 +9,7 @@ import type { ReadonlyDeep } from 'type-fest';
 import {
   FileView,
   ItemView,
+  MarkdownView,
   TextFileView,
   View
 } from 'obsidian';
@@ -61,7 +62,7 @@ export class Plugin extends PluginBase<PluginTypes> {
 
     this.addCommand({
       callback: () => {
-        invokeAsyncSafely(() => this.refreshViews(false));
+        invokeAsyncSafely(() => this.refreshViews(this.isVisibleView.bind(this)));
       },
       id: 'refresh-all-visible-views',
       name: 'Refresh all visible views'
@@ -69,7 +70,7 @@ export class Plugin extends PluginBase<PluginTypes> {
 
     this.addCommand({
       callback: () => {
-        invokeAsyncSafely(() => this.refreshViews(true));
+        invokeAsyncSafely(() => this.refreshViews(() => true));
       },
       id: 'refresh-all-open-views',
       name: 'Refresh all open views'
@@ -77,6 +78,18 @@ export class Plugin extends PluginBase<PluginTypes> {
 
     this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
     this.registerEvent(this.app.workspace.on('leaf-menu', this.handleLeafMenu.bind(this)));
+  }
+
+  private canAutoRefreshView(view: View): boolean {
+    if (this.settings.shouldAutoRefreshMarkdownViewInSourceMode) {
+      return true;
+    }
+
+    if (view instanceof MarkdownView && view.getMode() === 'source') {
+      return false;
+    }
+
+    return true;
   }
 
   private checkRefreshActiveView(checking?: boolean): boolean {
@@ -142,31 +155,18 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
-    const viewsToRefresh = new Set<View>();
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      if (leaf.view instanceof FileView && leaf.view.file === file) {
-        viewsToRefresh.add(leaf.view);
-      }
-    });
-
-    invokeAsyncSafely(async () => {
-      for (const view of viewsToRefresh) {
-        await this.refreshView(view);
-      }
-    });
+    invokeAsyncSafely(() => this.refreshViews((view) => view instanceof FileView && view.file === file && this.canAutoRefreshView(view)));
   }
 
-  private async refreshView(view: View, shouldKeepFocus = true): Promise<void> {
-    if (shouldKeepFocus) {
-      await this.executeKeepingFocus(async () => {
-        await this.refreshViewCore(view);
-      });
-    } else {
-      await this.refreshViewCore(view);
+  private isVisibleView(view: View): boolean {
+    return view.containerEl.isShown();
+  }
+
+  private async refreshView(view: null | View): Promise<void> {
+    if (!view) {
+      return;
     }
-  }
 
-  private async refreshViewCore(view: View): Promise<void> {
     if (view instanceof TextFileView && view.dirty) {
       await view.save();
     }
@@ -177,16 +177,16 @@ export class Plugin extends PluginBase<PluginTypes> {
     await leaf.setViewState(viewState, ephemeralState);
   }
 
-  private async refreshViews(shouldIncludeInvisible: boolean): Promise<void> {
-    const viewsToRefresh: View[] = [];
+  private async refreshViews(filter: (view: View) => boolean): Promise<void> {
+    const views: View[] = [];
     this.app.workspace.iterateAllLeaves((leaf) => {
-      if (shouldIncludeInvisible || leaf.view.containerEl.isShown()) {
-        viewsToRefresh.push(leaf.view);
+      if (filter(leaf.view)) {
+        views.push(leaf.view);
       }
     });
 
     await this.executeKeepingFocus(async () => {
-      const promises = viewsToRefresh.map((view) => this.refreshView(view, false));
+      const promises = views.map((view) => this.refreshView(view));
       await Promise.all(promises);
     });
   }
@@ -203,7 +203,9 @@ export class Plugin extends PluginBase<PluginTypes> {
     }
 
     this.autoRefreshIntervalId = window.setInterval(
-      () => this.checkRefreshActiveView(false),
+      () => {
+        invokeAsyncSafely(() => this.refreshViews((view) => view === this.app.workspace.getActiveViewOfType(View) && this.canAutoRefreshView(view)));
+      },
       this.settings.autoRefreshIntervalInSeconds * MILLISECONDS_IN_SECOND
     );
 
