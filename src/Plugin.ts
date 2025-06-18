@@ -170,6 +170,12 @@ export class Plugin extends PluginBase<PluginTypes> {
     if (view instanceof TextFileView && view.dirty) {
       await view.save();
     }
+
+    if (view instanceof MarkdownView && view.getMode() === 'preview') {
+      view.previewMode.rerender(true);
+      return;
+    }
+
     const leaf = view.leaf;
     const viewState = leaf.getViewState();
     const ephemeralState = leaf.getEphemeralState() as unknown;
