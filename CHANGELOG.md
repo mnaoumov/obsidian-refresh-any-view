@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.1.0
+
+- Avoid flickering for markdown views in preview mode
+- shouldAutoRefreshMarkdownViewInSourceMode
+- Add refresh all views commands
+- Handle modify only when fully loaded
+
 ## 3.0.0
 
 - Rebrand
