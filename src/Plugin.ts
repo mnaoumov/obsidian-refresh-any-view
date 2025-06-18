@@ -59,6 +59,22 @@ export class Plugin extends PluginBase<PluginTypes> {
       name: 'Refresh active view'
     });
 
+    this.addCommand({
+      callback: () => {
+        invokeAsyncSafely(() => this.refreshViews(false));
+      },
+      id: 'refresh-all-visible-views',
+      name: 'Refresh all visible views'
+    });
+
+    this.addCommand({
+      callback: () => {
+        invokeAsyncSafely(() => this.refreshViews(true));
+      },
+      id: 'refresh-all-open-views',
+      name: 'Refresh all open views'
+    });
+
     this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
     this.registerEvent(this.app.workspace.on('leaf-menu', this.handleLeafMenu.bind(this)));
   }
@@ -73,6 +89,17 @@ export class Plugin extends PluginBase<PluginTypes> {
       invokeAsyncSafely(() => this.refreshView(activeView));
     }
     return true;
+  }
+
+  private async executeKeepingFocus(callback: () => Promise<void>): Promise<void> {
+    const activeElement = document.activeElement;
+    try {
+      await callback();
+    } finally {
+      if (activeElement instanceof HTMLElement) {
+        activeElement.focus();
+      }
+    }
   }
 
   private handleLayoutChange(): void {
@@ -107,7 +134,7 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private handleModify(file: TAbstractFile): void {
-    if (!this.settings.autoRefreshOnFileChange) {
+    if (!this.settings.shouldAutoRefreshOnFileChange) {
       return;
     }
 
@@ -129,8 +156,17 @@ export class Plugin extends PluginBase<PluginTypes> {
     });
   }
 
-  private async refreshView(view: View): Promise<void> {
-    const activeElement = document.activeElement;
+  private async refreshView(view: View, shouldKeepFocus = true): Promise<void> {
+    if (shouldKeepFocus) {
+      await this.executeKeepingFocus(async () => {
+        await this.refreshViewCore(view);
+      });
+    } else {
+      await this.refreshViewCore(view);
+    }
+  }
+
+  private async refreshViewCore(view: View): Promise<void> {
     if (view instanceof TextFileView && view.dirty) {
       await view.save();
     }
@@ -139,12 +175,20 @@ export class Plugin extends PluginBase<PluginTypes> {
     const ephemeralState = leaf.getEphemeralState() as unknown;
     await leaf.setViewState({ type: ViewType.Empty });
     await leaf.setViewState(viewState, ephemeralState);
+  }
 
-    if (activeElement instanceof HTMLElement) {
-      const FOCUS_DELAY_IN_MILLISECONDS = 100;
-      await sleep(FOCUS_DELAY_IN_MILLISECONDS);
-      activeElement.focus();
-    }
+  private async refreshViews(shouldIncludeInvisible: boolean): Promise<void> {
+    const viewsToRefresh: View[] = [];
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      if (shouldIncludeInvisible || leaf.view.containerEl.isShown()) {
+        viewsToRefresh.push(leaf.view);
+      }
+    });
+
+    await this.executeKeepingFocus(async () => {
+      const promises = viewsToRefresh.map((view) => this.refreshView(view, false));
+      await Promise.all(promises);
+    });
   }
 
   private registerAutoRefreshTimer(): void {
