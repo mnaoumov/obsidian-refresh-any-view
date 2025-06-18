@@ -48,6 +48,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     await super.onLayoutReady();
     this.handleLayoutChange();
     this.registerAutoRefreshTimer();
+    this.registerEvent(this.app.vault.on('modify', this.handleModify.bind(this)));
   }
 
   protected override async onloadImpl(): Promise<void> {
@@ -60,7 +61,6 @@ export class Plugin extends PluginBase<PluginTypes> {
 
     this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
     this.registerEvent(this.app.workspace.on('leaf-menu', this.handleLeafMenu.bind(this)));
-    this.registerEvent(this.app.vault.on('modify', this.handleModify.bind(this)));
   }
 
   private checkRefreshActiveView(checking?: boolean): boolean {
