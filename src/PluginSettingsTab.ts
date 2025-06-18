@@ -9,7 +9,8 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
     this.containerEl.empty();
 
     new SettingEx(this.containerEl)
-      .setName('Auto refresh on file change')
+      .setName('Should auto refresh on file change')
+      .setDesc('Whether to auto refresh the file view when the file is changed')
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldAutoRefreshOnFileChange');
       });
