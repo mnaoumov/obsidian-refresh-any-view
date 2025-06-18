@@ -22,5 +22,12 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         this.bind(number, 'autoRefreshIntervalInSeconds')
           .setMin(0);
       });
+
+    new SettingEx(this.containerEl)
+      .setName('Should auto refresh markdown view in Source / Live Preview mode')
+      .setDesc('Whether to refresh the markdown view in Source / Live Preview mode, if auto refresh is enabled')
+      .addToggle((toggle) => {
+        this.bind(toggle, 'shouldAutoRefreshMarkdownViewInSourceMode');
+      });
   }
 }
