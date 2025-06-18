@@ -2,7 +2,7 @@
 
 (formerly known as `Refresh Preview`, see [Rebranding](#rebranding) section for more details)
 
-This is a plugin for [Obsidian](https://obsidian.md/) that allows to refresh preview mode without reopening the note.
+This is a plugin for [Obsidian](https://obsidian.md/) that allows to refresh any view without reopening it.
 
 It is usually useful if you have some dynamic content:
 
@@ -12,7 +12,7 @@ dv.span(new Date().toString());
 ```
 ````
 
-When you switch to the preview mode, the content is rendered once and will rerender only if you change the content of the code block or reopen the note.
+When you switch to the preview or live preview mode, the content is rendered once and will rerender only if you change the content of the code block or reopen the note.
 
 The plugin adds a `Refresh` button:
 
@@ -22,7 +22,7 @@ Also the plugin adds the `Refresh Any View: Refresh active view` command to the 
 
 The plugin allows to configure auto refresh on file change.
 
-The plugin allows to configure auto refresh within a given time interval.
+The plugin allows to configure auto refresh within a given time interval (it may introduce undesired UI flickering).
 
 ## Installation
 
@@ -33,7 +33,7 @@ The plugin is available in [the official Community Plugins repository](https://o
 To install the latest beta release of this plugin (regardless if it is available in [the official Community Plugins repository](https://obsidian.md/plugins) or not), follow these steps:
 
 1. Ensure you have the [BRAT plugin](https://obsidian.md/plugins?id=obsidian42-brat) installed and enabled.
-2. Click [Install via BRAT](https://intradeus.github.io/http-protocol-redirector?r=obsidian://brat?plugin=https://github.com/mnaoumov/obsidian-refresh-preview).
+2. Click [Install via BRAT](https://intradeus.github.io/http-protocol-redirector?r=obsidian://brat?plugin=https://github.com/mnaoumov/obsidian-refresh-any-view).
 3. An Obsidian pop-up window should appear. In the window, click the `Add plugin` button once and wait a few seconds for the plugin to install.
 
 ## Debugging
