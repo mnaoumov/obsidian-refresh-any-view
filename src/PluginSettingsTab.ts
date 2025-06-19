@@ -1,3 +1,4 @@
+import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
 
@@ -88,10 +89,17 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .setDesc(createFragment((f) => {
         f.appendText('View types to include for auto refresh.');
         f.createEl('br');
+        f.appendText('Insert each view type on a new line');
+        f.createEl('br');
         f.appendText('If empty, all view types will be included.');
+        f.createEl('br');
+        f.appendText('You can find the view type of a view via its context menu command ');
+        appendCodeBlock(f, 'Copy view type \'...\' to clipboard');
+        f.appendText('.');
       }))
       .addMultipleText((text) => {
         this.bind(text, 'includeViewTypesForAutoRefresh');
+        text.setPlaceholder('markdown\ncanvas');
       });
 
     new SettingEx(this.containerEl)
@@ -99,10 +107,17 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .setDesc(createFragment((f) => {
         f.appendText('View types to exclude for auto refresh.');
         f.createEl('br');
+        f.appendText('Insert each view type on a new line');
+        f.createEl('br');
         f.appendText('If empty, no view types will be excluded.');
+        f.createEl('br');
+        f.appendText('You can find the view type of a view via its context menu command ');
+        appendCodeBlock(f, 'Copy view type \'...\' to clipboard');
+        f.appendText('.');
       }))
       .addMultipleText((text) => {
         this.bind(text, 'excludeViewTypesForAutoRefresh');
+        text.setPlaceholder('file-explorer\nsearch');
       });
   }
 }
