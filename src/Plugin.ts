@@ -90,6 +90,10 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private canAutoRefreshView(view: View): boolean {
+    if (!this.settings.isViewTypeIncluded(view.getViewType())) {
+      return false;
+    }
+
     if (view.leaf.isDeferred && !this.settings.shouldLoadDeferredViewsOnAutoRefresh) {
       return false;
     }
