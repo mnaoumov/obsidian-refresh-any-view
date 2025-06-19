@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 3.2.0
+
+- Add auto refresh mode
+- Include/exclude view types
+- Add menu items for invisible leaves
+- copyViewTypeToClipboard
+- Add warning
+- Handle deferred views
+- Update libs
+
 ## 3.1.0
 
 - Avoid flickering for markdown views in preview mode
