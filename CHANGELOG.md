@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.2.1
+
+- Add examples and docs
+
 ## 3.2.0
 
 - Add auto refresh mode
