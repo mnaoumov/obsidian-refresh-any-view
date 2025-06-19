@@ -19,6 +19,7 @@ import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import type { PluginSettings } from './PluginSettings.ts';
 import type { PluginTypes } from './PluginTypes.ts';
 
+import { AutoRefreshMode } from './PluginSettings.ts';
 import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
 
@@ -174,6 +175,21 @@ export class Plugin extends PluginBase<PluginTypes> {
     invokeAsyncSafely(() => this.refreshViews((view) => view instanceof FileView && view.file === file && this.canAutoRefreshView(view)));
   }
 
+  private isMatchingAutoRefreshMode(view: View): boolean {
+    switch (this.settings.autoRefreshMode) {
+      case AutoRefreshMode.ActiveView:
+        return view === this.app.workspace.getActiveViewOfType(View);
+      case AutoRefreshMode.AllOpenViews:
+        return true;
+      case AutoRefreshMode.AllVisibleViews:
+        return view.leaf.isVisible();
+      case AutoRefreshMode.Off:
+        return false;
+      default:
+        return false;
+    }
+  }
+
   private isVisibleView(view: View): boolean {
     return view.leaf.isVisible();
   }
@@ -247,13 +263,13 @@ export class Plugin extends PluginBase<PluginTypes> {
       this.autoRefreshIntervalId = null;
     }
 
-    if (this.settings.autoRefreshIntervalInSeconds === 0) {
+    if (this.settings.autoRefreshMode === AutoRefreshMode.Off) {
       return;
     }
 
     this.autoRefreshIntervalId = window.setInterval(
       () => {
-        invokeAsyncSafely(() => this.refreshViews((view) => view === this.app.workspace.getActiveViewOfType(View) && this.canAutoRefreshView(view)));
+        invokeAsyncSafely(() => this.refreshViews((view) => this.isMatchingAutoRefreshMode(view) && this.canAutoRefreshView(view)));
       },
       this.settings.autoRefreshIntervalInSeconds * MILLISECONDS_IN_SECOND
     );
