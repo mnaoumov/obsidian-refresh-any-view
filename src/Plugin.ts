@@ -48,8 +48,9 @@ export class Plugin extends PluginBase<PluginTypes> {
   protected override async onLayoutReady(): Promise<void> {
     await super.onLayoutReady();
     this.handleLayoutChange();
-    this.registerAutoRefreshTimer();
     this.registerEvent(this.app.vault.on('modify', this.handleModify.bind(this)));
+    await this.loadDeferredViews();
+    this.registerAutoRefreshTimer();
   }
 
   protected override async onloadImpl(): Promise<void> {
@@ -115,6 +116,16 @@ export class Plugin extends PluginBase<PluginTypes> {
     }
   }
 
+  private getLeaves(condition: (leaf: WorkspaceLeaf) => boolean): WorkspaceLeaf[] {
+    const leaves: WorkspaceLeaf[] = [];
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      if (condition(leaf)) {
+        leaves.push(leaf);
+      }
+    });
+    return leaves;
+  }
+
   private handleLayoutChange(): void {
     const itemView = this.app.workspace.getActiveViewOfType(ItemView);
     if (!itemView) {
@@ -162,9 +173,28 @@ export class Plugin extends PluginBase<PluginTypes> {
     return view.containerEl.isShown();
   }
 
-  private async refreshView(view: null | View): Promise<void> {
-    if (!view) {
+  private async loadDeferredViews(): Promise<void> {
+    if (!this.settings.shouldLoadDeferredViewsOnStart) {
       return;
+    }
+
+    const DELAY_IN_MILLISECONDS = 100;
+    await sleep(DELAY_IN_MILLISECONDS);
+
+    const leaves = this.getLeaves(() => true);
+    const promises = leaves.map((leaf) => leaf.loadIfDeferred());
+    await Promise.all(promises);
+  }
+
+  private async refreshView(view: View): Promise<void> {
+    const leaf = view.leaf;
+
+    if (leaf.isDeferred) {
+      if (this.settings.shouldLoadDeferredViewsOnRefresh) {
+        await leaf.loadIfDeferred();
+      } else {
+        return;
+      }
     }
 
     if (view instanceof TextFileView && view.dirty) {
@@ -176,23 +206,17 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
-    const leaf = view.leaf;
     const viewState = leaf.getViewState();
     const ephemeralState = leaf.getEphemeralState() as unknown;
     await leaf.setViewState({ type: ViewType.Empty });
     await leaf.setViewState(viewState, ephemeralState);
   }
 
-  private async refreshViews(filter: (view: View) => boolean): Promise<void> {
-    const views: View[] = [];
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      if (filter(leaf.view)) {
-        views.push(leaf.view);
-      }
-    });
+  private async refreshViews(condition: (view: View) => boolean): Promise<void> {
+    const leaves = this.getLeaves((leaf) => condition(leaf.view));
 
     await this.executeKeepingFocus(async () => {
-      const promises = views.map((view) => this.refreshView(view));
+      const promises = leaves.map((leaf) => this.refreshView(leaf.view));
       await Promise.all(promises);
     });
   }
