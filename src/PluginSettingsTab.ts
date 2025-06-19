@@ -10,14 +10,22 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
 
     new SettingEx(this.containerEl)
       .setName('Should auto refresh on file change')
-      .setDesc('Whether to auto refresh the file view when the file is changed')
+      .setDesc(createFragment((f) => {
+        f.appendText('Whether to auto refresh the file view when the file is changed.');
+        f.createEl('br');
+        f.appendText('⚠️ This may cause flickering or losing some UI state such as the cursor position.');
+      }))
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldAutoRefreshOnFileChange');
       });
 
     new SettingEx(this.containerEl)
       .setName('Auto refresh interval (seconds)')
-      .setDesc('Set to 0 to disable auto refresh')
+      .setDesc(createFragment((f) => {
+        f.appendText('Set to 0 to disable auto refresh.');
+        f.createEl('br');
+        f.appendText('⚠️ This may cause flickering or losing some UI state such as the cursor position.');
+      }))
       .addNumber((number) => {
         this.bind(number, 'autoRefreshIntervalInSeconds')
           .setMin(0);
@@ -25,7 +33,11 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
 
     new SettingEx(this.containerEl)
       .setName('Should auto refresh markdown view in Source / Live Preview mode')
-      .setDesc('Whether to refresh the markdown view in Source / Live Preview mode, if auto refresh is enabled')
+      .setDesc(createFragment((f) => {
+        f.appendText('Whether to refresh the markdown view in Source / Live Preview mode, if auto refresh is enabled.');
+        f.createEl('br');
+        f.appendText('⚠️ This may cause flickering or losing some UI state such as the cursor position.');
+      }))
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldAutoRefreshMarkdownViewInSourceMode');
       });
