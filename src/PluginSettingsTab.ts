@@ -43,15 +43,15 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new SettingEx(this.containerEl)
-      .setName('Should auto load deferred views on refresh')
-      .setDesc('Whether to auto load deferred views on refresh')
+      .setName('Should load deferred views on auto refresh')
+      .setDesc('Whether to load deferred views on auto refresh')
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldLoadDeferredViewsOnRefresh');
+        this.bind(toggle, 'shouldLoadDeferredViewsOnAutoRefresh');
       });
 
     new SettingEx(this.containerEl)
-      .setName('Should auto load deferred views on start')
-      .setDesc('Whether to auto load deferred views on start')
+      .setName('Should load deferred views on start')
+      .setDesc('Whether to load deferred views on start')
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldLoadDeferredViewsOnStart');
       });
