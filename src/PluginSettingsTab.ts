@@ -3,6 +3,8 @@ import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
 
 import type { PluginTypes } from './PluginTypes.ts';
 
+import { AutoRefreshMode } from './PluginSettings.ts';
+
 export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
   public override display(): void {
     super.display();
@@ -20,16 +22,41 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new SettingEx(this.containerEl)
-      .setName('Auto refresh interval (seconds)')
+      .setName('Auto refresh mode')
       .setDesc(createFragment((f) => {
-        f.appendText('Set to 0 to disable auto refresh.');
+        f.appendText('How to auto refresh the view.');
         f.createEl('br');
         f.appendText('⚠️ This may cause flickering or losing some UI state such as the cursor position.');
       }))
+      .addDropdown((dropdown) => {
+        dropdown.addOptions({
+          /* eslint-disable perfectionist/sort-objects */
+          [AutoRefreshMode.Off]: 'Off',
+          [AutoRefreshMode.ActiveView]: 'Active view',
+          [AutoRefreshMode.AllVisibleViews]: 'All visible views',
+          [AutoRefreshMode.AllOpenViews]: 'All open views'
+          /* eslint-enable perfectionist/sort-objects */
+        });
+        this.bind(dropdown, 'autoRefreshMode', {
+          onChanged(newValue: AutoRefreshMode) {
+            updateAutoRefreshIntervalSettingVisibility(newValue);
+          }
+        });
+      });
+
+    function updateAutoRefreshIntervalSettingVisibility(newValue: AutoRefreshMode): void {
+      autoRefreshIntervalSetting.setVisibility(newValue !== AutoRefreshMode.Off);
+    }
+
+    const autoRefreshIntervalSetting = new SettingEx(this.containerEl)
+      .setName('Auto refresh interval (seconds)')
+      .setDesc('Interval in seconds to auto refresh the view(s).')
       .addNumber((number) => {
         this.bind(number, 'autoRefreshIntervalInSeconds')
-          .setMin(0);
+          .setMin(1);
       });
+
+    updateAutoRefreshIntervalSettingVisibility(this.plugin.settings.autoRefreshMode);
 
     new SettingEx(this.containerEl)
       .setName('Should auto refresh markdown view in Source / Live Preview mode')

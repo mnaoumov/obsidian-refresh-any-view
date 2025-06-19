@@ -1,5 +1,14 @@
+export enum AutoRefreshMode {
+  ActiveView = 'ActiveView',
+  AllOpenViews = 'AllOpenViews',
+  AllVisibleViews = 'AllVisibleViews',
+  Off = 'Off'
+}
+
 export class PluginSettings {
-  public autoRefreshIntervalInSeconds = 0;
+  // eslint-disable-next-line no-magic-numbers
+  public autoRefreshIntervalInSeconds = 5;
+  public autoRefreshMode: AutoRefreshMode = AutoRefreshMode.Off;
   public excludeViewTypesForAutoRefresh: readonly string[] = [];
   public includeViewTypesForAutoRefresh: readonly string[] = [];
   public shouldAutoRefreshMarkdownViewInSourceMode = false;
