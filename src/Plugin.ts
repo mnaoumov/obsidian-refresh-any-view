@@ -1,8 +1,4 @@
-import type {
-  Menu,
-  TAbstractFile,
-  WorkspaceLeaf
-} from 'obsidian';
+import type { TAbstractFile } from 'obsidian';
 import type { PluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsWrapper';
 import type { ReadonlyDeep } from 'type-fest';
 
@@ -10,19 +6,23 @@ import {
   FileView,
   ItemView,
   MarkdownView,
+  Menu,
   TextFileView,
-  View
+  View,
+  WorkspaceLeaf
 } from 'obsidian';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { isFile } from 'obsidian-dev-utils/obsidian/FileSystem';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
-import { ViewType } from 'obsidian-typings/implementations';
 
 import type { PluginSettings } from './PluginSettings.ts';
 import type { PluginTypes } from './PluginTypes.ts';
 
 import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
+
+type OnOpenTabHeaderMenuFn = WorkspaceLeaf['onOpenTabHeaderMenu'];
 
 export class Plugin extends PluginBase<PluginTypes> {
   private autoRefreshIntervalId: null | number = null;
@@ -51,6 +51,15 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.registerEvent(this.app.vault.on('modify', this.handleModify.bind(this)));
     await this.loadDeferredViews();
     this.registerAutoRefreshTimer();
+
+    const that = this;
+    registerPatch(this, WorkspaceLeaf.prototype, {
+      onOpenTabHeaderMenu: (next: OnOpenTabHeaderMenuFn): OnOpenTabHeaderMenuFn => {
+        return function onOpenTabHeaderMenuPatched(this: WorkspaceLeaf, evt: MouseEvent, parentEl: HTMLElement): void {
+          that.onOpenTabHeaderMenu(next, this, evt, parentEl);
+        };
+      }
+    });
   }
 
   protected override async onloadImpl(): Promise<void> {
@@ -78,15 +87,14 @@ export class Plugin extends PluginBase<PluginTypes> {
     });
 
     this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
-    this.registerEvent(this.app.workspace.on('leaf-menu', this.handleLeafMenu.bind(this)));
   }
 
   private canAutoRefreshView(view: View): boolean {
-    if (this.settings.shouldAutoRefreshMarkdownViewInSourceMode) {
-      return true;
+    if (view.leaf.isDeferred && !this.settings.shouldLoadDeferredViewsOnAutoRefresh) {
+      return false;
     }
 
-    if (view instanceof MarkdownView && view.getMode() === 'source') {
+    if (view instanceof MarkdownView && view.getMode() === 'source' && !this.settings.shouldAutoRefreshMarkdownViewInSourceMode) {
       return false;
     }
 
@@ -150,7 +158,38 @@ export class Plugin extends PluginBase<PluginTypes> {
     });
   }
 
-  private handleLeafMenu(menu: Menu, leaf: WorkspaceLeaf): void {
+  private handleModify(file: TAbstractFile): void {
+    if (!this.settings.shouldAutoRefreshOnFileChange) {
+      return;
+    }
+
+    if (!isFile(file)) {
+      return;
+    }
+
+    invokeAsyncSafely(() => this.refreshViews((view) => view instanceof FileView && view.file === file && this.canAutoRefreshView(view)));
+  }
+
+  private isVisibleView(view: View): boolean {
+    return view.leaf.isVisible();
+  }
+
+  private async loadDeferredViews(): Promise<void> {
+    if (!this.settings.shouldLoadDeferredViewsOnStart) {
+      return;
+    }
+
+    const DELAY_IN_MILLISECONDS = 100;
+    await sleep(DELAY_IN_MILLISECONDS);
+
+    const leaves = this.getLeaves(() => true);
+    const promises = leaves.map((leaf) => leaf.loadIfDeferred());
+    await Promise.all(promises);
+  }
+
+  private onOpenTabHeaderMenu(next: OnOpenTabHeaderMenuFn, leaf: WorkspaceLeaf, evt: MouseEvent, parentEl: HTMLElement): void {
+    next.call(leaf, evt, parentEl);
+    const menu = Menu.forEvent(evt);
     menu.addItem((item) => {
       item.setTitle('Refresh view');
       item.setIcon('refresh-cw');
@@ -171,45 +210,10 @@ export class Plugin extends PluginBase<PluginTypes> {
     });
   }
 
-  private handleModify(file: TAbstractFile): void {
-    if (!this.settings.shouldAutoRefreshOnFileChange) {
-      return;
-    }
-
-    if (!isFile(file)) {
-      return;
-    }
-
-    invokeAsyncSafely(() => this.refreshViews((view) => view instanceof FileView && view.file === file && this.canAutoRefreshView(view)));
-  }
-
-  private isVisibleView(view: View): boolean {
-    return view.containerEl.isShown();
-  }
-
-  private async loadDeferredViews(): Promise<void> {
-    if (!this.settings.shouldLoadDeferredViewsOnStart) {
-      return;
-    }
-
-    const DELAY_IN_MILLISECONDS = 100;
-    await sleep(DELAY_IN_MILLISECONDS);
-
-    const leaves = this.getLeaves(() => true);
-    const promises = leaves.map((leaf) => leaf.loadIfDeferred());
-    await Promise.all(promises);
-  }
-
   private async refreshView(view: View): Promise<void> {
     const leaf = view.leaf;
 
-    if (leaf.isDeferred) {
-      if (this.settings.shouldLoadDeferredViewsOnRefresh) {
-        await leaf.loadIfDeferred();
-      } else {
-        return;
-      }
-    }
+    await leaf.loadIfDeferred();
 
     if (view instanceof TextFileView && view.dirty) {
       await view.save();
@@ -220,10 +224,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
-    const viewState = leaf.getViewState();
-    const ephemeralState = leaf.getEphemeralState() as unknown;
-    await leaf.setViewState({ type: ViewType.Empty });
-    await leaf.setViewState(viewState, ephemeralState);
+    await leaf.rebuildView();
   }
 
   private async refreshViews(condition: (view: View) => boolean): Promise<void> {
