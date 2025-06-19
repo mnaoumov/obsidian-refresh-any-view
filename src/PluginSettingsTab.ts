@@ -29,5 +29,19 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldAutoRefreshMarkdownViewInSourceMode');
       });
+
+    new SettingEx(this.containerEl)
+      .setName('Should auto load deferred views on refresh')
+      .setDesc('Whether to auto load deferred views on refresh')
+      .addToggle((toggle) => {
+        this.bind(toggle, 'shouldLoadDeferredViewsOnRefresh');
+      });
+
+    new SettingEx(this.containerEl)
+      .setName('Should auto load deferred views on start')
+      .setDesc('Whether to auto load deferred views on start')
+      .addToggle((toggle) => {
+        this.bind(toggle, 'shouldLoadDeferredViewsOnStart');
+      });
   }
 }
