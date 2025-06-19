@@ -55,5 +55,27 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldLoadDeferredViewsOnStart');
       });
+
+    new SettingEx(this.containerEl)
+      .setName('Include view types for auto refresh')
+      .setDesc(createFragment((f) => {
+        f.appendText('View types to include for auto refresh.');
+        f.createEl('br');
+        f.appendText('If empty, all view types will be included.');
+      }))
+      .addMultipleText((text) => {
+        this.bind(text, 'includeViewTypesForAutoRefresh');
+      });
+
+    new SettingEx(this.containerEl)
+      .setName('Exclude view types for auto refresh')
+      .setDesc(createFragment((f) => {
+        f.appendText('View types to exclude for auto refresh.');
+        f.createEl('br');
+        f.appendText('If empty, no view types will be excluded.');
+      }))
+      .addMultipleText((text) => {
+        this.bind(text, 'excludeViewTypesForAutoRefresh');
+      });
   }
 }
