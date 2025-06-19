@@ -105,6 +105,10 @@ export class Plugin extends PluginBase<PluginTypes> {
     return true;
   }
 
+  private async copyViewTypeToClipboard(viewType: string): Promise<void> {
+    await window.navigator.clipboard.writeText(viewType);
+  }
+
   private async executeKeepingFocus(callback: () => Promise<void>): Promise<void> {
     const activeElement = document.activeElement;
     try {
@@ -153,6 +157,16 @@ export class Plugin extends PluginBase<PluginTypes> {
       item.setSection('pane');
       item.onClick(() => {
         invokeAsyncSafely(() => this.refreshView(leaf.view));
+      });
+    });
+
+    menu.addItem((item) => {
+      const viewType = leaf.view.getViewType();
+      item.setTitle(`Copy view type '${viewType}' to clipboard`);
+      item.setIcon('info');
+      item.setSection('pane');
+      item.onClick(() => {
+        invokeAsyncSafely(() => this.copyViewTypeToClipboard(viewType));
       });
     });
   }
