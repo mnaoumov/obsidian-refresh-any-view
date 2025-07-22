@@ -250,10 +250,16 @@ export class Plugin extends PluginBase<PluginTypes> {
         return;
       }
 
-      const cursor = view.editor.getCursor();
-      view.editMode.toggleSource();
-      view.editMode.toggleSource();
-      view.editor.setCursor(cursor);
+      const cm = view.editor.cm;
+      const scrollTop = cm.scrollDOM.scrollTop;
+      cm.dispatch({
+        changes: { from: 0, to: cm.state.doc.length, insert: cm.state.doc },
+        selection: cm.state.selection,
+      });
+      requestAnimationFrame(() => {
+        cm.scrollDOM.scrollTop = scrollTop;
+      });
+      return;
     }
 
     await leaf.rebuildView();
