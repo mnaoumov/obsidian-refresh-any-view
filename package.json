@@ -1,6 +1,6 @@
 {
   "name": "refresh-preview",
-  "version": "3.2.1",
+  "version": "3.3.0",
   "description": "Allows to refresh any view without reopening it.",
   "scripts": {
     "build": "obsidian-dev-utils build",
