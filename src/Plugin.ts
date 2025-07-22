@@ -1,6 +1,5 @@
 import type { TAbstractFile } from 'obsidian';
 import type { PluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsWrapper';
-import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import type { ReadonlyDeep } from 'type-fest';
 
 import {
@@ -14,6 +13,7 @@ import {
 } from 'obsidian';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { isFile } from 'obsidian-dev-utils/obsidian/FileSystem';
+import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
@@ -253,8 +253,12 @@ export class Plugin extends PluginBase<PluginTypes> {
       const cm = view.editor.cm;
       const scrollTop = cm.scrollDOM.scrollTop;
       cm.dispatch({
-        changes: { from: 0, to: cm.state.doc.length, insert: cm.state.doc },
-        selection: cm.state.selection,
+        changes: {
+          from: 0,
+          insert: cm.state.doc,
+          to: cm.state.doc.length
+        },
+        selection: cm.state.selection
       });
       requestAnimationFrame(() => {
         cm.scrollDOM.scrollTop = scrollTop;
