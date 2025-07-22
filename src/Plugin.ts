@@ -1,5 +1,6 @@
 import type { TAbstractFile } from 'obsidian';
 import type { PluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsWrapper';
+import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import type { ReadonlyDeep } from 'type-fest';
 
 import {
@@ -239,9 +240,15 @@ export class Plugin extends PluginBase<PluginTypes> {
       await view.save();
     }
 
-    if (view instanceof MarkdownView && view.getMode() === 'preview') {
-      view.previewMode.rerender(true);
-      return;
+    if (view instanceof MarkdownView) {
+      if (view.file) {
+        await getCacheSafe(this.app, view.file);
+      }
+
+      if (view.getMode() === 'preview') {
+        view.previewMode.rerender(true);
+        return;
+      }
     }
 
     await leaf.rebuildView();
