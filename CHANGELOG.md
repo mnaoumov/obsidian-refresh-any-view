@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.3.0
+
+- Update editor without flickering
+- Update md file after its cache synced
+- Update libs
+
 ## 3.2.1
 
 - Add examples and docs
