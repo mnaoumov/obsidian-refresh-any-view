@@ -249,6 +249,11 @@ export class Plugin extends PluginBase<PluginTypes> {
         view.previewMode.rerender(true);
         return;
       }
+
+      const cursor = view.editor.getCursor();
+      view.editMode.toggleSource();
+      view.editMode.toggleSource();
+      view.editor.setCursor(cursor);
     }
 
     await leaf.rebuildView();
