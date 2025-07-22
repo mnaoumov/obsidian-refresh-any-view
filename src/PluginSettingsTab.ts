@@ -63,8 +63,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .setName('Should auto refresh markdown view in Source / Live Preview mode')
       .setDesc(createFragment((f) => {
         f.appendText('Whether to refresh the markdown view in Source / Live Preview mode, if auto refresh is enabled.');
-        f.createEl('br');
-        f.appendText('⚠️ This may cause flickering or losing some UI state such as the cursor position.');
       }))
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldAutoRefreshMarkdownViewInSourceMode');
