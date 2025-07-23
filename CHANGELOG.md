@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.3.1
+
+- Fix manual refresh button (#7)
+
 ## 3.3.0
 
 - Update editor without flickering
