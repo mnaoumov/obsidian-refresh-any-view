@@ -15,6 +15,7 @@ export class PluginSettings {
   public shouldAutoRefreshOnFileChange = false;
   public shouldLoadDeferredViewsOnAutoRefresh = false;
   public shouldLoadDeferredViewsOnStart = false;
+  public shouldUseQuickMarkdownViewRefresh = true;
 
   public isViewTypeIncluded(viewType: string): boolean {
     return (this.includeViewTypesForAutoRefresh.length === 0 || this.includeViewTypesForAutoRefresh.includes(viewType))
