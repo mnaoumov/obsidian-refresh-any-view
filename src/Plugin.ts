@@ -252,13 +252,21 @@ export class Plugin extends PluginBase<PluginTypes> {
 
       const cm = view.editor.cm;
       const scrollTop = cm.scrollDOM.scrollTop;
+      const text = cm.state.doc;
+      const selection = cm.state.selection;
       cm.dispatch({
         changes: {
           from: 0,
-          insert: cm.state.doc,
-          to: cm.state.doc.length
+          to: text.length
+        }
+      });
+      cm.dispatch({
+        changes: {
+          from: 0,
+          insert: text,
+          to: 0
         },
-        selection: cm.state.selection
+        selection
       });
       requestAnimationFrame(() => {
         cm.scrollDOM.scrollTop = scrollTop;
