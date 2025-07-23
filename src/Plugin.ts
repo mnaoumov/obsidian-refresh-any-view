@@ -246,28 +246,38 @@ export class Plugin extends PluginBase<PluginTypes> {
       }
 
       if (view.getMode() === 'preview') {
-        view.previewMode.rerender(true);
+        if (this.settings.shouldUseQuickMarkdownViewRefresh) {
+          view.previewMode.rerender(true);
+        } else {
+          await leaf.rebuildView();
+        }
+
         return;
       }
 
-      const cm = view.editor.cm;
+      let cm = view.editor.cm;
       const scrollTop = cm.scrollDOM.scrollTop;
       const text = cm.state.doc;
       const selection = cm.state.selection;
-      cm.dispatch({
-        changes: {
-          from: 0,
-          to: text.length
-        }
-      });
-      cm.dispatch({
-        changes: {
-          from: 0,
-          insert: text,
-          to: 0
-        },
-        selection
-      });
+      if (this.settings.shouldUseQuickMarkdownViewRefresh) {
+        cm.dispatch({
+          changes: {
+            from: 0,
+            to: text.length
+          }
+        });
+        cm.dispatch({
+          changes: {
+            from: 0,
+            insert: text,
+            to: 0
+          },
+          selection
+        });
+      } else {
+        await leaf.rebuildView();
+        cm = view.editor.cm;
+      }
       requestAnimationFrame(() => {
         cm.scrollDOM.scrollTop = scrollTop;
       });

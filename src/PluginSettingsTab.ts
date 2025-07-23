@@ -69,6 +69,21 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       });
 
     new SettingEx(this.containerEl)
+      .setName('Should use quick markdown view refresh')
+      .setDesc(createFragment((f) => {
+        f.appendText('Whether to use quick refresh for markdown view in Source / Live Preview mode.');
+        f.createEl('br');
+        f.appendText('When enabled, custom panels in the markdown view might not be refreshed.');
+        f.createEl('br');
+        f.appendText(
+          'When disabled, the full markdown view refreshing is performed, but it may cause flickering or losing some UI state such as the cursor position.'
+        );
+      }))
+      .addToggle((toggle) => {
+        this.bind(toggle, 'shouldUseQuickMarkdownViewRefresh');
+      });
+
+    new SettingEx(this.containerEl)
       .setName('Should load deferred views on auto refresh')
       .setDesc('Whether to load deferred views on auto refresh')
       .addToggle((toggle) => {
