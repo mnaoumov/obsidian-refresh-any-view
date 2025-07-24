@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.5.0
+
+- restoreScrollPosition for all views
+
 ## 3.4.0
 
 - shouldUseQuickMarkdownViewRefresh (#7)
