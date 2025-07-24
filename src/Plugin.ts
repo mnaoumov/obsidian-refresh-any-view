@@ -234,6 +234,9 @@ export class Plugin extends PluginBase<PluginTypes> {
   private async refreshView(view: View): Promise<void> {
     const leaf = view.leaf;
 
+    const viewScrollTop = view.containerEl.scrollTop;
+    const viewScrollLeft = view.containerEl.scrollLeft;
+
     await leaf.loadIfDeferred();
 
     if (view instanceof TextFileView && view.dirty) {
@@ -251,6 +254,8 @@ export class Plugin extends PluginBase<PluginTypes> {
         } else {
           await leaf.rebuildView();
         }
+
+        restoreScrollPosition();
 
         return;
       }
@@ -286,6 +291,14 @@ export class Plugin extends PluginBase<PluginTypes> {
     }
 
     await leaf.rebuildView();
+    restoreScrollPosition();
+
+    function restoreScrollPosition(): void {
+      requestAnimationFrame(() => {
+        view.containerEl.scrollTop = viewScrollTop;
+        view.containerEl.scrollLeft = viewScrollLeft;
+      });
+    }
   }
 
   private async refreshViews(condition: (view: View) => boolean): Promise<void> {
