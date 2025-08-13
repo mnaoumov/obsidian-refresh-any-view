@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.5.1
+
+- Update libs
+
 ## 3.5.0
 
 - restoreScrollPosition for all views
