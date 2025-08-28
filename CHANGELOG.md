@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.5.4
+
+- Update libs
+
 ## 3.5.3
 
 - Update libs
