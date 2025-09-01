@@ -1,20 +1,24 @@
 # CHANGELOG
 
+## 3.5.5
+
+- Minor changes
+
 ## 3.5.4
 
-- Update libs
+- Minor changes
 
 ## 3.5.3
 
-- Update libs
+- Minor changes
 
 ## 3.5.2
 
-- Update libs
+- Minor changes
 
 ## 3.5.1
 
-- Update libs
+- Minor changes
 
 ## 3.5.0
 
@@ -32,7 +36,6 @@
 
 - Update editor without flickering
 - Update md file after its cache synced
-- Update libs
 
 ## 3.2.1
 
@@ -46,7 +49,6 @@
 - copyViewTypeToClipboard
 - Add warning
 - Handle deferred views
-- Update libs
 
 ## 3.1.0
 
@@ -63,27 +65,27 @@
 
 ## 2.0.19
 
-- Update libs
+- Minor changes
 
 ## 2.0.18
 
-- Update libs
+- Minor changes
 
 ## 2.0.17
 
-- Update libs
+- Minor changes
 
 ## 2.0.16
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.1.1
+- Minor changes
 
 ## 2.0.15
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.1.0
+- Minor changes
 
 ## 2.0.14
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.0.1
+- Minor changes
 
 ## 2.0.13
 
@@ -91,31 +93,24 @@
 
 ## 2.0.12
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.2.1
+- Minor changes
 
 ## 2.0.11
 
 - Update template
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/18.4.2
 
 ## 2.0.10
 
 - Update BRAT links
-
-## 2.0.10-beta.1
-
 - Switch to number component
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/17.9.1
 
 ## 2.0.9
 
 - Fix validation
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/17.8.0
 
 ## 2.0.8
 
 - Lint
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/17.2.2
 
 ## 2.0.7
 
@@ -123,28 +118,27 @@
 
 ## 2.0.6
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/16.1.0
+- Minor changes
 
 ## 2.0.5
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/15.0.0
+- Minor changes
 
 ## 2.0.4
 
-- Update libs
+- Minor changes
 
 ## 2.0.3
 
-- Update libs
 - Avoid default exports
 
 ## 2.0.2
 
-- Update libs
+- Minor changes
 
 ## 2.0.1
 
-- Update libs
+- Minor changes
 
 ## 2.0.0
 
