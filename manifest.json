@@ -1,7 +1,7 @@
 {
   "id": "refresh-preview",
   "name": "Refresh Any View",
-  "version": "3.5.9",
+  "version": "3.5.10",
   "minAppVersion": "1.9.12",
   "description": "Allows to refresh any view without reopening it.",
   "author": "mnaoumov",
