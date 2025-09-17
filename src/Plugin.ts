@@ -28,7 +28,7 @@ type OnOpenTabHeaderMenuFn = WorkspaceLeaf['onOpenTabHeaderMenu'];
 
 export class Plugin extends PluginBase<PluginTypes> {
   private autoRefreshIntervalId: null | number = null;
-  private itemViews = new WeakSet<ItemView>();
+  private readonly itemViews = new WeakSet<ItemView>();
 
   public override async onSaveSettings(
     newSettings: ReadonlyDeep<PluginSettingsWrapper<PluginSettings>>,
