@@ -6,7 +6,7 @@ export enum AutoRefreshMode {
 }
 
 export class PluginSettings {
-  // eslint-disable-next-line no-magic-numbers
+  // eslint-disable-next-line no-magic-numbers -- Magic numbers are OK in settings.
   public autoRefreshIntervalInSeconds = 5;
   public autoRefreshMode: AutoRefreshMode = AutoRefreshMode.Off;
   public excludeViewTypesForAutoRefresh: readonly string[] = [];
