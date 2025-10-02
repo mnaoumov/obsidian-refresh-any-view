@@ -281,7 +281,7 @@ export class Plugin extends PluginBase<PluginTypes> {
         });
       } else {
         await leaf.rebuildView();
-        // eslint-disable-next-line require-atomic-updates
+        // eslint-disable-next-line require-atomic-updates -- Ignore possible race condition.
         cm = view.editor.cm;
       }
       requestAnimationFrame(() => {

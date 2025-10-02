@@ -31,12 +31,12 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       }))
       .addDropdown((dropdown) => {
         dropdown.addOptions({
-          /* eslint-disable perfectionist/sort-objects */
+          /* eslint-disable perfectionist/sort-objects -- Need to keep enum order. */
           [AutoRefreshMode.Off]: 'Off',
           [AutoRefreshMode.ActiveView]: 'Active view',
           [AutoRefreshMode.AllVisibleViews]: 'All visible views',
           [AutoRefreshMode.AllOpenViews]: 'All open views'
-          /* eslint-enable perfectionist/sort-objects */
+          /* eslint-enable perfectionist/sort-objects -- Need to keep enum order. */
         });
         this.bind(dropdown, 'autoRefreshMode', {
           onChanged(newValue: AutoRefreshMode) {
