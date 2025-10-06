@@ -178,16 +178,16 @@
 - Add auto refresh
 - Ensure view is loaded
 
-# 1.3.0
+## 1.3.0
 
 - Use single button click handler
 - Set tooltip
 
-# 1.2.0
+## 1.2.0
 
 - Another memory leak fix
 
-# 1.1.0
+## 1.1.0
 
 - Improve memory leak
 
