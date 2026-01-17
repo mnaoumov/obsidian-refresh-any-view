@@ -20,6 +20,9 @@ import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import type { PluginSettings } from './PluginSettings.ts';
 import type { PluginTypes } from './PluginTypes.ts';
 
+import { RefreshActiveViewCommand } from './Commands/RefreshActiveViewCommand.ts';
+import { RefreshAllOpenViewsCommand } from './Commands/RefreshAllOpenViewsCommand.ts';
+import { RefreshAllVisibleViewsCommand } from './Commands/RefreshAllVisibleViewsCommand.ts';
 import { AutoRefreshMode } from './PluginSettings.ts';
 import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
@@ -37,6 +40,84 @@ export class Plugin extends PluginBase<PluginTypes> {
   ): Promise<void> {
     await super.onSaveSettings(newSettings, oldSettings, context);
     this.registerAutoRefreshTimer();
+  }
+
+  public async refreshAllOpenViews(): Promise<void> {
+    await this.refreshViews(() => true);
+  }
+
+  public async refreshAllVisibleViews(): Promise<void> {
+    await this.refreshViews(this.isVisibleView.bind(this));
+  }
+
+  public async refreshView(view: View): Promise<void> {
+    const leaf = view.leaf;
+
+    const viewScrollTop = view.containerEl.scrollTop;
+    const viewScrollLeft = view.containerEl.scrollLeft;
+
+    await leaf.loadIfDeferred();
+
+    if (view instanceof TextFileView && view.dirty) {
+      await view.save();
+    }
+
+    if (view instanceof MarkdownView) {
+      if (view.file) {
+        await getCacheSafe(this.app, view.file);
+      }
+
+      if (view.getMode() === 'preview') {
+        if (this.settings.shouldUseQuickMarkdownViewRefresh) {
+          view.previewMode.rerender(true);
+        } else {
+          await leaf.rebuildView();
+        }
+
+        restoreScrollPosition();
+
+        return;
+      }
+
+      let cm = view.editor.cm;
+      const scrollTop = cm.scrollDOM.scrollTop;
+      const text = cm.state.doc;
+      const selection = cm.state.selection;
+      if (this.settings.shouldUseQuickMarkdownViewRefresh) {
+        cm.dispatch({
+          changes: {
+            from: 0,
+            to: text.length
+          }
+        });
+        cm.dispatch({
+          changes: {
+            from: 0,
+            insert: text,
+            to: 0
+          },
+          selection
+        });
+      } else {
+        await leaf.rebuildView();
+        // eslint-disable-next-line require-atomic-updates -- Ignore possible race condition.
+        cm = view.editor.cm;
+      }
+      requestAnimationFrame(() => {
+        cm.scrollDOM.scrollTop = scrollTop;
+      });
+      return;
+    }
+
+    await leaf.rebuildView();
+    restoreScrollPosition();
+
+    function restoreScrollPosition(): void {
+      requestAnimationFrame(() => {
+        view.containerEl.scrollTop = viewScrollTop;
+        view.containerEl.scrollLeft = viewScrollLeft;
+      });
+    }
   }
 
   protected override createSettingsManager(): PluginSettingsManager {
@@ -66,27 +147,9 @@ export class Plugin extends PluginBase<PluginTypes> {
 
   protected override async onloadImpl(): Promise<void> {
     await super.onloadImpl();
-    this.addCommand({
-      checkCallback: this.checkRefreshActiveView.bind(this),
-      id: 'refresh-active-view',
-      name: 'Refresh active view'
-    });
-
-    this.addCommand({
-      callback: () => {
-        invokeAsyncSafely(() => this.refreshViews(this.isVisibleView.bind(this)));
-      },
-      id: 'refresh-all-visible-views',
-      name: 'Refresh all visible views'
-    });
-
-    this.addCommand({
-      callback: () => {
-        invokeAsyncSafely(() => this.refreshViews(() => true));
-      },
-      id: 'refresh-all-open-views',
-      name: 'Refresh all open views'
-    });
+    new RefreshActiveViewCommand(this).register();
+    new RefreshAllVisibleViewsCommand(this).register();
+    new RefreshAllOpenViewsCommand(this).register();
 
     this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
   }
@@ -104,18 +167,6 @@ export class Plugin extends PluginBase<PluginTypes> {
       return false;
     }
 
-    return true;
-  }
-
-  private checkRefreshActiveView(checking?: boolean): boolean {
-    const activeView = this.app.workspace.getActiveViewOfType(View);
-    if (!activeView) {
-      return false;
-    }
-
-    if (!checking) {
-      invokeAsyncSafely(() => this.refreshView(activeView));
-    }
     return true;
   }
 
@@ -229,76 +280,6 @@ export class Plugin extends PluginBase<PluginTypes> {
         invokeAsyncSafely(() => this.copyViewTypeToClipboard(viewType));
       });
     });
-  }
-
-  private async refreshView(view: View): Promise<void> {
-    const leaf = view.leaf;
-
-    const viewScrollTop = view.containerEl.scrollTop;
-    const viewScrollLeft = view.containerEl.scrollLeft;
-
-    await leaf.loadIfDeferred();
-
-    if (view instanceof TextFileView && view.dirty) {
-      await view.save();
-    }
-
-    if (view instanceof MarkdownView) {
-      if (view.file) {
-        await getCacheSafe(this.app, view.file);
-      }
-
-      if (view.getMode() === 'preview') {
-        if (this.settings.shouldUseQuickMarkdownViewRefresh) {
-          view.previewMode.rerender(true);
-        } else {
-          await leaf.rebuildView();
-        }
-
-        restoreScrollPosition();
-
-        return;
-      }
-
-      let cm = view.editor.cm;
-      const scrollTop = cm.scrollDOM.scrollTop;
-      const text = cm.state.doc;
-      const selection = cm.state.selection;
-      if (this.settings.shouldUseQuickMarkdownViewRefresh) {
-        cm.dispatch({
-          changes: {
-            from: 0,
-            to: text.length
-          }
-        });
-        cm.dispatch({
-          changes: {
-            from: 0,
-            insert: text,
-            to: 0
-          },
-          selection
-        });
-      } else {
-        await leaf.rebuildView();
-        // eslint-disable-next-line require-atomic-updates -- Ignore possible race condition.
-        cm = view.editor.cm;
-      }
-      requestAnimationFrame(() => {
-        cm.scrollDOM.scrollTop = scrollTop;
-      });
-      return;
-    }
-
-    await leaf.rebuildView();
-    restoreScrollPosition();
-
-    function restoreScrollPosition(): void {
-      requestAnimationFrame(() => {
-        view.containerEl.scrollTop = viewScrollTop;
-        view.containerEl.scrollLeft = viewScrollLeft;
-      });
-    }
   }
 
   private async refreshViews(condition: (view: View) => boolean): Promise<void> {
