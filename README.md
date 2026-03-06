@@ -1,6 +1,10 @@
 # Refresh Any View
 
-(formerly known as `Refresh Preview`, see [Rebranding](#rebranding) section for more details)
+> formerly known as `Refresh Preview`, see [Rebranding](#rebranding) section for more details
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov)
+[![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-refresh-any-view)](https://github.com/mnaoumov/obsidian-refresh-any-view/releases)
+[![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-refresh-any-view/total)](https://github.com/mnaoumov/obsidian-refresh-any-view/releases)
 
 This is a plugin for [Obsidian](https://obsidian.md/) that allows to refresh any view without reopening it.
 
@@ -63,8 +67,14 @@ However, for the backward compatibility, the previous id `refresh-preview` is st
 ## Support
 
 <!-- markdownlint-disable MD033 -->
+
 <a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="60" width="217"></a>
+
 <!-- markdownlint-enable MD033 -->
+
+## My other Obsidian resources
+
+[See my other Obsidian resources](https://github.com/mnaoumov/obsidian-resources).
 
 ## License
 

@@ -1,3 +1,7 @@
+import {
+  getEnumKey,
+  getEnumValue
+} from 'obsidian-dev-utils/Enum';
 import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
@@ -39,9 +43,11 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
           /* eslint-enable perfectionist/sort-objects -- Need to keep enum order. */
         });
         this.bind(dropdown, 'autoRefreshMode', {
+          componentToPluginSettingsValueConverter: (value: string) => getEnumValue(AutoRefreshMode, value),
           onChanged(newValue: AutoRefreshMode) {
             updateAutoRefreshIntervalSettingVisibility(newValue);
-          }
+          },
+          pluginSettingsToComponentValueConverter: (value: AutoRefreshMode) => getEnumKey(AutoRefreshMode, value)
         });
       });
 
