@@ -1,7 +1,7 @@
 import {
   getEnumKey,
   getEnumValue
-} from 'obsidian-dev-utils/Enum';
+} from 'obsidian-dev-utils/enum';
 import { appendCodeBlock } from 'obsidian-dev-utils/html-element';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab-base';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';

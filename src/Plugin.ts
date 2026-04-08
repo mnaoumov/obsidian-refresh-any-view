@@ -1,5 +1,5 @@
 import type { TAbstractFile } from 'obsidian';
-import type { PluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsWrapper';
+import type { PluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-wrapper';
 import type { ReadonlyDeep } from 'type-fest';
 
 import {
@@ -12,8 +12,8 @@ import {
   WorkspaceLeaf
 } from 'obsidian';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
-import { isFile } from 'obsidian-dev-utils/obsidian/FileSystem';
-import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
+import { isFile } from 'obsidian-dev-utils/obsidian/file-system';
+import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-base';
 
