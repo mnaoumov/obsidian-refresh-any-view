@@ -2,9 +2,9 @@ import {
   getEnumKey,
   getEnumValue
 } from 'obsidian-dev-utils/Enum';
-import { appendCodeBlock } from 'obsidian-dev-utils/HTMLElement';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { appendCodeBlock } from 'obsidian-dev-utils/html-element';
+import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab-base';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 import type { PluginTypes } from './PluginTypes.ts';
 

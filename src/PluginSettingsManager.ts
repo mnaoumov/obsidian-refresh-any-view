@@ -1,6 +1,6 @@
 import type { GenericObject } from 'obsidian-dev-utils/TypeGuards';
 
-import { PluginSettingsManagerBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsManagerBase';
+import { PluginSettingsManagerBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-manager-base';
 
 import type { PluginTypes } from './PluginTypes.ts';
 

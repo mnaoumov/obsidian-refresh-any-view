@@ -1,6 +1,6 @@
 import { View } from 'obsidian';
-import { CommandInvocationBase } from 'obsidian-dev-utils/obsidian/Commands/CommandBase';
-import { NonEditorCommandBase } from 'obsidian-dev-utils/obsidian/Commands/NonEditorCommandBase';
+import { CommandInvocationBase } from 'obsidian-dev-utils/obsidian/commands/command-base';
+import { NonEditorCommandBase } from 'obsidian-dev-utils/obsidian/commands/non-editor-command-base';
 
 import type { Plugin } from '../Plugin.ts';
 
