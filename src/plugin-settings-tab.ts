@@ -3,15 +3,16 @@ import {
   getEnumValue
 } from 'obsidian-dev-utils/enum';
 import { appendCodeBlock } from 'obsidian-dev-utils/html-element';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab-base';
+import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
-import type { PluginTypes } from './PluginTypes.ts';
+import type { PluginSettings } from './plugin-settings.ts';
 
-import { AutoRefreshMode } from './PluginSettings.ts';
+import { AutoRefreshMode } from './plugin-settings.ts';
 
-export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
+export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   public override display(): void {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- super.display() calls the PluginSettingsTabBase override; the inherited @deprecated tag on Obsidian's SettingTab.display propagates via TS getJsDocTags.
     super.display();
     this.containerEl.empty();
 
@@ -20,7 +21,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .setDesc(createFragment((f) => {
         f.appendText('Whether to auto refresh the file view when the file is changed.');
         f.createEl('br');
-        f.appendText('⚠️ This may cause flickering or losing some UI state such as the cursor position.');
+        f.appendText('\u26A0\uFE0F This may cause flickering or losing some UI state such as the cursor position.');
       }))
       .addToggle((toggle) => {
         this.bind(toggle, 'shouldAutoRefreshOnFileChange');
@@ -31,7 +32,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
       .setDesc(createFragment((f) => {
         f.appendText('How to auto refresh the view.');
         f.createEl('br');
-        f.appendText('⚠️ This may cause flickering or losing some UI state such as the cursor position.');
+        f.appendText('\u26A0\uFE0F This may cause flickering or losing some UI state such as the cursor position.');
       }))
       .addDropdown((dropdown) => {
         dropdown.addOptions({
@@ -51,10 +52,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         });
       });
 
-    function updateAutoRefreshIntervalSettingVisibility(newValue: AutoRefreshMode): void {
-      autoRefreshIntervalSetting.setVisibility(newValue !== AutoRefreshMode.Off);
-    }
-
     const autoRefreshIntervalSetting = new SettingEx(this.containerEl)
       .setName('Auto refresh interval (seconds)')
       .setDesc('Interval in seconds to auto refresh the view(s).')
@@ -63,7 +60,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
           .setMin(1);
       });
 
-    updateAutoRefreshIntervalSettingVisibility(this.plugin.settings.autoRefreshMode);
+    updateAutoRefreshIntervalSettingVisibility(this.pluginSettingsComponent.settings.autoRefreshMode);
 
     new SettingEx(this.containerEl)
       .setName('Should auto refresh markdown view in Source / Live Preview mode')
@@ -140,5 +137,9 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
         // eslint-disable-next-line obsidianmd/ui/sentence-case -- we need `file-explorer` lowercase as type name
         text.setPlaceholder('file-explorer\nsearch');
       });
+
+    function updateAutoRefreshIntervalSettingVisibility(newValue: AutoRefreshMode): void {
+      autoRefreshIntervalSetting.setVisibility(newValue !== AutoRefreshMode.Off);
+    }
   }
 }

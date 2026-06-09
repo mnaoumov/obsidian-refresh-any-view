@@ -1,6 +1,8 @@
-import type { TAbstractFile } from 'obsidian';
-import type { PluginSettingsWrapper } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-wrapper';
-import type { ReadonlyDeep } from 'type-fest';
+import type {
+  App,
+  PluginManifest,
+  TAbstractFile
+} from 'obsidian';
 
 import {
   FileView,
@@ -12,34 +14,80 @@ import {
   WorkspaceLeaf
 } from 'obsidian';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
+import { AppActiveFileProvider } from 'obsidian-dev-utils/obsidian/active-file-provider';
+import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
+import { PluginCommandRegistrar } from 'obsidian-dev-utils/obsidian/command-registrar';
+import { registerAsyncEvent } from 'obsidian-dev-utils/obsidian/components/async-events-component';
+import { CallbackLayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
+import { MenuEventRegistrarComponent } from 'obsidian-dev-utils/obsidian/components/menu-event-registrar-component';
+import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
+import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
+import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import { isFile } from 'obsidian-dev-utils/obsidian/file-system';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
-import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-base';
+import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
+import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
-import type { PluginSettings } from './PluginSettings.ts';
-import type { PluginTypes } from './PluginTypes.ts';
-
-import { RefreshActiveViewCommand } from './Commands/RefreshActiveViewCommand.ts';
-import { RefreshAllOpenViewsCommand } from './Commands/RefreshAllOpenViewsCommand.ts';
-import { RefreshAllVisibleViewsCommand } from './Commands/RefreshAllVisibleViewsCommand.ts';
-import { AutoRefreshMode } from './PluginSettings.ts';
-import { PluginSettingsManager } from './PluginSettingsManager.ts';
-import { PluginSettingsTab } from './PluginSettingsTab.ts';
+import { RefreshActiveViewCommandHandler } from './command-handlers/refresh-active-view-command-handler.ts';
+import { RefreshAllOpenViewsCommandHandler } from './command-handlers/refresh-all-open-views-command-handler.ts';
+import { RefreshAllVisibleViewsCommandHandler } from './command-handlers/refresh-all-visible-views-command-handler.ts';
+import { PluginSettingsComponent } from './plugin-settings-component.ts';
+import { PluginSettingsTab } from './plugin-settings-tab.ts';
+import { AutoRefreshMode } from './plugin-settings.ts';
 
 type OnOpenTabHeaderMenuFn = WorkspaceLeaf['onOpenTabHeaderMenu'];
 
-export class Plugin extends PluginBase<PluginTypes> {
+export class Plugin extends PluginBase {
   private autoRefreshIntervalId: null | number = null;
   private readonly itemViews = new WeakSet<ItemView>();
+  private readonly monkeyAroundComponent: MonkeyAroundComponent;
+  private readonly pluginSettingsComponent: PluginSettingsComponent;
 
-  public override async onSaveSettings(
-    newSettings: ReadonlyDeep<PluginSettingsWrapper<PluginSettings>>,
-    oldSettings: ReadonlyDeep<PluginSettingsWrapper<PluginSettings>>,
-    context?: unknown
-  ): Promise<void> {
-    await super.onSaveSettings(newSettings, oldSettings, context);
-    this.registerAutoRefreshTimer();
+  public constructor(app: App, manifest: PluginManifest) {
+    super(app, manifest);
+    this.pluginSettingsComponent = this.addChild(
+      new PluginSettingsComponent({
+        dataHandler: new PluginDataHandler(this),
+        pluginEventSource: new PluginEventSourceImpl(this)
+      })
+    );
+    this.addChild(
+      new PluginSettingsTabComponent({
+        plugin: this,
+        pluginSettingsTab: new PluginSettingsTab({
+          plugin: this,
+          pluginSettingsComponent: this.pluginSettingsComponent
+        })
+      })
+    );
+    const menuEventRegistrarComponent = this.addChild(new MenuEventRegistrarComponent(app));
+    this.addChild(
+      new CommandHandlerComponent({
+        activeFileProvider: new AppActiveFileProvider(app),
+        commandHandlers: [
+          new RefreshActiveViewCommandHandler({
+            getActiveView: (): null | View => this.app.workspace.getActiveViewOfType(View),
+            refreshView: this.refreshView.bind(this)
+          }),
+          new RefreshAllVisibleViewsCommandHandler({
+            refreshAllVisibleViews: this.refreshAllVisibleViews.bind(this)
+          }),
+          new RefreshAllOpenViewsCommandHandler({
+            refreshAllOpenViews: this.refreshAllOpenViews.bind(this)
+          })
+        ],
+        commandRegistrar: new PluginCommandRegistrar(this),
+        menuEventRegistrar: menuEventRegistrarComponent,
+        pluginName: manifest.name
+      })
+    );
+    this.monkeyAroundComponent = this.addChild(new MonkeyAroundComponent());
+    this.addChild(new CallbackLayoutReadyComponent(app, () => this.onLayoutReady()));
+  }
+
+  public override async onload(): Promise<void> {
+    await super.onload();
+    this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
   }
 
   public async refreshAllOpenViews(): Promise<void> {
@@ -68,7 +116,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       }
 
       if (view.getMode() === 'preview') {
-        if (this.settings.shouldUseQuickMarkdownViewRefresh) {
+        if (this.pluginSettingsComponent.settings.shouldUseQuickMarkdownViewRefresh) {
           view.previewMode.rerender(true);
         } else {
           await leaf.rebuildView();
@@ -83,7 +131,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       const scrollTop = cm.scrollDOM.scrollTop;
       const text = cm.state.doc;
       const selection = cm.state.selection;
-      if (this.settings.shouldUseQuickMarkdownViewRefresh) {
+      if (this.pluginSettingsComponent.settings.shouldUseQuickMarkdownViewRefresh) {
         cm.dispatch({
           changes: {
             from: 0,
@@ -103,7 +151,7 @@ export class Plugin extends PluginBase<PluginTypes> {
         // eslint-disable-next-line require-atomic-updates -- Ignore possible race condition.
         cm = view.editor.cm;
       }
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         cm.scrollDOM.scrollTop = scrollTop;
       });
       return;
@@ -113,57 +161,23 @@ export class Plugin extends PluginBase<PluginTypes> {
     restoreScrollPosition();
 
     function restoreScrollPosition(): void {
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         view.containerEl.scrollTop = viewScrollTop;
         view.containerEl.scrollLeft = viewScrollLeft;
       });
     }
   }
 
-  protected override createSettingsManager(): PluginSettingsManager {
-    return new PluginSettingsManager(this);
-  }
-
-  protected override createSettingsTab(): null | PluginSettingsTab {
-    return new PluginSettingsTab(this);
-  }
-
-  protected override async onLayoutReady(): Promise<void> {
-    await super.onLayoutReady();
-    this.handleLayoutChange();
-    this.registerEvent(this.app.vault.on('modify', this.handleModify.bind(this)));
-    await this.loadDeferredViews();
-    this.registerAutoRefreshTimer();
-
-    const that = this;
-    registerPatch(this, WorkspaceLeaf.prototype, {
-      onOpenTabHeaderMenu: (next: OnOpenTabHeaderMenuFn): OnOpenTabHeaderMenuFn => {
-        return function onOpenTabHeaderMenuPatched(this: WorkspaceLeaf, evt: MouseEvent, parentEl: HTMLElement): void {
-          that.onOpenTabHeaderMenu(next, this, evt, parentEl);
-        };
-      }
-    });
-  }
-
-  protected override async onloadImpl(): Promise<void> {
-    await super.onloadImpl();
-    new RefreshActiveViewCommand(this).register();
-    new RefreshAllVisibleViewsCommand(this).register();
-    new RefreshAllOpenViewsCommand(this).register();
-
-    this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
-  }
-
   private canAutoRefreshView(view: View): boolean {
-    if (!this.settings.isViewTypeIncluded(view.getViewType())) {
+    if (!this.pluginSettingsComponent.settings.isViewTypeIncluded(view.getViewType())) {
       return false;
     }
 
-    if (view.leaf.isDeferred && !this.settings.shouldLoadDeferredViewsOnAutoRefresh) {
+    if (view.leaf.isDeferred && !this.pluginSettingsComponent.settings.shouldLoadDeferredViewsOnAutoRefresh) {
       return false;
     }
 
-    if (view instanceof MarkdownView && view.getMode() === 'source' && !this.settings.shouldAutoRefreshMarkdownViewInSourceMode) {
+    if (view instanceof MarkdownView && view.getMode() === 'source' && !this.pluginSettingsComponent.settings.shouldAutoRefreshMarkdownViewInSourceMode) {
       return false;
     }
 
@@ -171,11 +185,11 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private async copyViewTypeToClipboard(viewType: string): Promise<void> {
-    await window.navigator.clipboard.writeText(viewType);
+    await activeWindow.navigator.clipboard.writeText(viewType);
   }
 
   private async executeKeepingFocus(callback: () => Promise<void>): Promise<void> {
-    const activeElement = document.activeElement;
+    const activeElement = activeDocument.activeElement;
     try {
       await callback();
     } finally {
@@ -216,7 +230,7 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private handleModify(file: TAbstractFile): void {
-    if (!this.settings.shouldAutoRefreshOnFileChange) {
+    if (!this.pluginSettingsComponent.settings.shouldAutoRefreshOnFileChange) {
       return;
     }
 
@@ -228,7 +242,7 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private isMatchingAutoRefreshMode(view: View): boolean {
-    switch (this.settings.autoRefreshMode) {
+    switch (this.pluginSettingsComponent.settings.autoRefreshMode) {
       case AutoRefreshMode.ActiveView:
         return view === this.app.workspace.getActiveViewOfType(View);
       case AutoRefreshMode.AllOpenViews:
@@ -247,7 +261,7 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private async loadDeferredViews(): Promise<void> {
-    if (!this.settings.shouldLoadDeferredViewsOnStart) {
+    if (!this.pluginSettingsComponent.settings.shouldLoadDeferredViewsOnStart) {
       return;
     }
 
@@ -257,6 +271,29 @@ export class Plugin extends PluginBase<PluginTypes> {
     const leaves = this.getLeaves(() => true);
     const promises = leaves.map((leaf) => leaf.loadIfDeferred());
     await Promise.all(promises);
+  }
+
+  private async onLayoutReady(): Promise<void> {
+    this.handleLayoutChange();
+    this.registerEvent(this.app.vault.on('modify', this.handleModify.bind(this)));
+    await this.loadDeferredViews();
+    this.registerAutoRefreshTimer();
+
+    registerAsyncEvent(
+      this,
+      this.pluginSettingsComponent.on('saveSettings', () => {
+        this.registerAutoRefreshTimer();
+      })
+    );
+
+    const that = this;
+    this.monkeyAroundComponent.registerPatch(WorkspaceLeaf.prototype, {
+      onOpenTabHeaderMenu: (next: OnOpenTabHeaderMenuFn): OnOpenTabHeaderMenuFn => {
+        return function onOpenTabHeaderMenuPatched(this: WorkspaceLeaf, evt: MouseEvent, parentEl: HTMLElement): void {
+          that.onOpenTabHeaderMenu(next, this, evt, parentEl);
+        };
+      }
+    });
   }
 
   private onOpenTabHeaderMenu(next: OnOpenTabHeaderMenuFn, leaf: WorkspaceLeaf, evt: MouseEvent, parentEl: HTMLElement): void {
@@ -294,11 +331,11 @@ export class Plugin extends PluginBase<PluginTypes> {
   private registerAutoRefreshTimer(): void {
     const MILLISECONDS_IN_SECOND = 1000;
     if (this.autoRefreshIntervalId) {
-      clearInterval(this.autoRefreshIntervalId);
+      window.clearInterval(this.autoRefreshIntervalId);
       this.autoRefreshIntervalId = null;
     }
 
-    if (this.settings.autoRefreshMode === AutoRefreshMode.Off) {
+    if (this.pluginSettingsComponent.settings.autoRefreshMode === AutoRefreshMode.Off) {
       return;
     }
 
@@ -306,7 +343,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       () => {
         invokeAsyncSafely(() => this.refreshViews((view) => this.isMatchingAutoRefreshMode(view) && this.canAutoRefreshView(view)));
       },
-      this.settings.autoRefreshIntervalInSeconds * MILLISECONDS_IN_SECOND
+      this.pluginSettingsComponent.settings.autoRefreshIntervalInSeconds * MILLISECONDS_IN_SECOND
     );
 
     this.registerInterval(this.autoRefreshIntervalId);
