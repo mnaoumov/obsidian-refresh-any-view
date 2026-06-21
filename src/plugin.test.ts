@@ -35,14 +35,6 @@ import {
 } from './plugin-settings.ts';
 import { Plugin } from './plugin.ts';
 
-// The real `PluginBase.onload()` loads dev-utils' own notice/context/debug components, which read a
-// Shared-state bag off the app via `getObsidianDevUtilsState`. The strict `App` mock has no such bag, so
-// Stub this one utility (return a fresh value wrapper per call) — mirroring dev-utils' own PluginBase test.
-vi.mock('obsidian-dev-utils/obsidian/app', async (importOriginal) => ({
-  ...await importOriginal<typeof import('obsidian-dev-utils/obsidian/app')>(),
-  getObsidianDevUtilsState: vi.fn((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }))
-}));
-
 // `getCacheSafe` and `isFile` are dev-utils utilities. Stubbing their RETURN VALUE (not their algorithm)
 // Is an allowed test double — the plugin's branches that depend on them are what we exercise.
 const mockGetCacheSafe = vi.fn((): Promise<undefined> => Promise.resolve(undefined));
