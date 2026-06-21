@@ -1,145 +1,102 @@
-/* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-useless-constructor, no-restricted-syntax -- Test mocks require empty constructors and flexible patterns. */
-import type { PluginSettingsTabBaseConstructorParams } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
+import type {
+  App as AppOriginal,
+  Plugin
+} from 'obsidian';
+import type { GenericVoidFunction } from 'obsidian-dev-utils/function';
+import type { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
 
 import { castTo } from 'obsidian-dev-utils/object-utils';
+import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
+  beforeEach,
   describe,
   expect,
   it,
   vi
 } from 'vitest';
 
-import type { PluginSettings } from './plugin-settings.ts';
-
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
-import { AutoRefreshMode } from './plugin-settings.ts';
+import {
+  AutoRefreshMode,
+  PluginSettings
+} from './plugin-settings.ts';
 
-interface BindOptions {
-  readonly componentToPluginSettingsValueConverter?: ((value: string) => unknown) | undefined;
-  readonly onChanged?: ((newValue: unknown) => void) | undefined;
-  readonly pluginSettingsToComponentValueConverter?: ((value: unknown) => string) | undefined;
+interface DropdownBindOptions {
+  componentToPluginSettingsValueConverter(value: string): AutoRefreshMode;
+  onChanged(newValue: AutoRefreshMode): void;
+  pluginSettingsToComponentValueConverter(value: AutoRefreshMode): string;
 }
 
-const capturedBindOptions: BindOptions[] = [];
+let app: AppOriginal;
 
-vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-settings-tab', () => ({
-  PluginSettingsTabBase: class {
-    public containerEl = activeDocument.createElement('div');
-
-    public pluginSettingsComponent = {
-      settings: new (class {
-        public autoRefreshIntervalInSeconds = 5;
-        public autoRefreshMode: AutoRefreshMode = AutoRefreshMode.Off;
-        public excludeViewTypesForAutoRefresh: readonly string[] = [];
-        public includeViewTypesForAutoRefresh: readonly string[] = [];
-        public shouldAutoRefreshMarkdownViewInSourceMode = false;
-        public shouldAutoRefreshOnFileChange = false;
-        public shouldLoadDeferredViewsOnAutoRefresh = false;
-        public shouldLoadDeferredViewsOnStart = false;
-        public shouldUseQuickMarkdownViewRefresh = true;
-      })()
-    };
-
-    public constructor(_params: unknown) {}
-
-    public bind(component: unknown, _property: string, options?: BindOptions): unknown {
-      if (options) {
-        capturedBindOptions.push(options);
-      }
-
-      return component;
-    }
-
-    public display(): void {}
-  }
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/setting-ex', () => ({
-  SettingEx: class {
-    public constructor(el: HTMLElement) {
-      el.appendChild(activeDocument.createElement('div'));
-    }
-
-    public addDropdown(cb: (dropdown: { addOptions(opts: object): void }) => void): unknown {
-      cb({
-        addOptions: vi.fn()
-      });
-      return this;
-    }
-
-    public addMultipleText(cb: (text: { setPlaceholder(s: string): unknown }) => void): unknown {
-      cb({ setPlaceholder: vi.fn() });
-      return this;
-    }
-
-    public addNumber(cb: (component: { setMin(min: number): unknown }) => void): unknown {
-      const component = { setMin: vi.fn(() => component) };
-      cb(component);
-      return this;
-    }
-
-    public addToggle(cb: (toggle: object) => void): unknown {
-      cb({});
-      return this;
-    }
-
-    public setDesc(_desc: unknown): unknown {
-      return this;
-    }
-
-    public setName(_name: string): unknown {
-      return this;
-    }
-
-    public setVisibility(_visible: boolean): unknown {
-      return this;
-    }
-  }
-}));
-
-vi.mock('obsidian-dev-utils/enum', () => ({
-  getEnumKey: vi.fn((_e: unknown, value: unknown) => String(value)),
-  getEnumValue: vi.fn((_e: unknown, key: unknown) => String(key))
-}));
-
-vi.mock('obsidian-dev-utils/html-element', () => ({
-  appendCodeBlock: vi.fn()
-}));
+beforeEach(() => {
+  vi.restoreAllMocks();
+  app = App.createConfigured__().asOriginalType__();
+  // The real `bind` is exercised by `obsidian-dev-utils`'s own tests. Here we only need to observe
+  // That the tab wires each component to the correct setting key, so we stub its return value
+  // (an allowed test double): the real test-mocks components are strict proxies that throw on the
+  // Duck-typing probes inside the real `bind`.
+  vi.spyOn(PluginSettingsTabBase.prototype, 'bind').mockImplementation((valueComponent) => valueComponent);
+});
 
 describe('PluginSettingsTab', () => {
-  function createSettingsTab(): PluginSettingsTab {
-    return new PluginSettingsTab(castTo<PluginSettingsTabBaseConstructorParams<PluginSettings>>({}));
-  }
-
   it('should create an instance', () => {
-    const tab = createSettingsTab();
-    expect(tab).toBeInstanceOf(PluginSettingsTab);
+    expect(createTab()).toBeInstanceOf(PluginSettingsTab);
   });
 
-  it('should render settings in display()', () => {
-    capturedBindOptions.length = 0;
-    const tab = createSettingsTab();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing display() which is deprecated but still the mechanism used by PluginSettingsTabBase.
+  it('should render settings into the container on display', () => {
+    const tab = createTab();
+
     tab.displayLegacy();
     expect(tab.containerEl.children.length).toBeGreaterThan(0);
-    // Invoke the dropdown converters after display() so autoRefreshIntervalSetting is initialized
-    for (const opts of capturedBindOptions) {
-      opts.componentToPluginSettingsValueConverter?.('Off');
-      opts.onChanged?.(AutoRefreshMode.ActiveView);
-      opts.onChanged?.(AutoRefreshMode.Off);
-      opts.pluginSettingsToComponentValueConverter?.(AutoRefreshMode.Off);
-    }
   });
 
-  it('should call updateAutoRefreshIntervalSettingVisibility with Off mode', () => {
-    capturedBindOptions.length = 0;
-    const tab = createSettingsTab();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing display() behavior with different setting values.
+  it('should bind each setting to the correct property name', () => {
+    const tab = createTab();
+
     tab.displayLegacy();
-    expect(tab.containerEl.children.length).toBeGreaterThan(0);
-    for (const opts of capturedBindOptions) {
-      opts.onChanged?.(AutoRefreshMode.Off);
+    const boundKeys = vi.mocked(PluginSettingsTabBase.prototype.bind).mock.calls.map((call) => call[1]);
+    expect(boundKeys).toContain('shouldAutoRefreshOnFileChange');
+    expect(boundKeys).toContain('autoRefreshMode');
+    expect(boundKeys).toContain('autoRefreshIntervalInSeconds');
+    expect(boundKeys).toContain('includeViewTypesForAutoRefresh');
+    expect(boundKeys).toContain('excludeViewTypesForAutoRefresh');
+  });
+
+  it('should drive the auto refresh mode dropdown converters and visibility toggling', () => {
+    const tab = createTab();
+
+    tab.displayLegacy();
+
+    const optionsList = vi.mocked(PluginSettingsTabBase.prototype.bind).mock.calls
+      .map((call) => castTo<DropdownBindOptions | undefined>(call[2]))
+      .filter((options): options is DropdownBindOptions => options !== undefined);
+
+    expect(optionsList.length).toBeGreaterThan(0);
+
+    for (const options of optionsList) {
+      expect(options.componentToPluginSettingsValueConverter('Off')).toBe(AutoRefreshMode.Off);
+      expect(options.pluginSettingsToComponentValueConverter(AutoRefreshMode.Off)).toBe('Off');
+      options.onChanged(AutoRefreshMode.ActiveView);
+      options.onChanged(AutoRefreshMode.Off);
     }
   });
 });
-/* eslint-enable @typescript-eslint/no-empty-function, @typescript-eslint/no-useless-constructor, no-restricted-syntax -- End of test file. */
+
+function createTab(): PluginSettingsTab {
+  const plugin = strictProxy<Plugin>({
+    app,
+    manifest: { id: 'refresh-preview' }
+  });
+  const pluginSettingsComponent = strictProxy<PluginSettingsComponentBase<PluginSettings>>({
+    on: castTo<PluginSettingsComponentBase<PluginSettings>['on']>(vi.fn((_name: string, _callback: GenericVoidFunction) => ({
+      asyncEventSource: {
+        offref: vi.fn()
+      }
+    }))),
+    settings: new PluginSettings()
+  });
+  return new PluginSettingsTab({ plugin, pluginSettingsComponent });
+}

@@ -1,6 +1,8 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-extraneous-class, @typescript-eslint/no-useless-constructor, @typescript-eslint/require-await -- Test mocks require empty constructors and async stubs. */
-import type { View as ViewOriginal } from 'obsidian';
+import type { View } from 'obsidian';
 
+import { noopAsync } from 'obsidian-dev-utils/function';
+import { castTo } from 'obsidian-dev-utils/object-utils';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   describe,
   expect,
@@ -10,73 +12,76 @@ import {
 
 import { RefreshActiveViewCommandHandler } from './refresh-active-view-command-handler.ts';
 
-vi.mock('obsidian-dev-utils/obsidian/command-handlers/global-command-handler', () => ({
-  GlobalCommandHandler: class {
-    public constructor(_params: unknown) {
-      // Base no-op
-    }
-  }
-}));
-
-interface CommandHandlerPrivate {
-  canExecute(): boolean;
+interface ExecutableHandler {
   execute(): Promise<void>;
 }
 
-function asPrivate(handler: RefreshActiveViewCommandHandler): CommandHandlerPrivate {
-  // eslint-disable-next-line no-restricted-syntax -- Accessing protected methods for testing requires double assertion.
-  return handler as unknown as CommandHandlerPrivate;
-}
-
 describe('RefreshActiveViewCommandHandler', () => {
-  it('should create an instance', () => {
+  it('should build a command with the expected id, name and icon', () => {
     const handler = new RefreshActiveViewCommandHandler({
-      getActiveView: () => null,
-      refreshView: async () => undefined
+      getActiveView: (): null => null,
+      refreshView: noopAsync
     });
-    expect(handler).toBeInstanceOf(RefreshActiveViewCommandHandler);
+    const command = handler.buildCommand();
+    expect(command.id).toBe('refresh-active-view');
+    expect(command.name).toBe('Refresh active view');
+    expect(command.icon).toBe('refresh-ccw');
   });
 
-  describe('canExecute', () => {
-    it('should return false when there is no active view', () => {
+  describe('canExecute (via checkCallback)', () => {
+    it('should report unavailable when there is no active view', () => {
       const handler = new RefreshActiveViewCommandHandler({
-        getActiveView: () => null,
-        refreshView: async () => undefined
+        getActiveView: (): null => null,
+        refreshView: noopAsync
       });
-      expect(asPrivate(handler).canExecute()).toBe(false);
+      expect(handler.buildCommand().checkCallback?.(true)).toBe(false);
     });
 
-    it('should return true when there is an active view', () => {
-      const mockView = {} as ViewOriginal;
+    it('should report available when there is an active view', () => {
+      const view = strictProxy<View>({});
       const handler = new RefreshActiveViewCommandHandler({
-        getActiveView: () => mockView,
-        refreshView: async () => undefined
+        getActiveView: (): View => view,
+        refreshView: noopAsync
       });
-      expect(asPrivate(handler).canExecute()).toBe(true);
+      expect(handler.buildCommand().checkCallback?.(true)).toBe(true);
     });
   });
 
-  describe('execute', () => {
+  describe('execute (via checkCallback)', () => {
     it('should call refreshView with the active view', async () => {
-      const mockView = {} as ViewOriginal;
-      const refreshView = vi.fn().mockResolvedValue(undefined);
+      const view = strictProxy<View>({});
+      const refreshView = vi.fn((): Promise<void> => noopAsync());
       const handler = new RefreshActiveViewCommandHandler({
-        getActiveView: () => mockView,
+        getActiveView: (): View => view,
         refreshView
       });
-      await asPrivate(handler).execute();
-      expect(refreshView).toHaveBeenCalledWith(mockView);
+      handler.buildCommand().checkCallback?.(false);
+      await noopAsync();
+      expect(refreshView).toHaveBeenCalledWith(view);
     });
 
-    it('should not call refreshView when there is no active view', async () => {
-      const refreshView = vi.fn().mockResolvedValue(undefined);
+    it('should not run when there is no active view', async () => {
+      const refreshView = vi.fn((): Promise<void> => noopAsync());
       const handler = new RefreshActiveViewCommandHandler({
-        getActiveView: () => null,
+        getActiveView: (): null => null,
         refreshView
       });
-      await asPrivate(handler).execute();
+      expect(handler.buildCommand().checkCallback?.(false)).toBe(false);
+      await noopAsync();
+      expect(refreshView).not.toHaveBeenCalled();
+    });
+
+    it('should be a no-op when the active view disappears before execute runs', async () => {
+      // `checkCallback` guards `execute` behind `canExecute`, so the `if (view)` guard inside `execute`
+      // Is only reachable if the active view vanishes between the two calls. Invoke the handler's own
+      // Protected `execute` directly to cover that defensive branch.
+      const refreshView = vi.fn((): Promise<void> => noopAsync());
+      const handler = new RefreshActiveViewCommandHandler({
+        getActiveView: (): null => null,
+        refreshView
+      });
+      await castTo<ExecutableHandler>(handler).execute();
       expect(refreshView).not.toHaveBeenCalled();
     });
   });
 });
-/* eslint-enable @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-extraneous-class, @typescript-eslint/no-useless-constructor, @typescript-eslint/require-await -- End of test file. */

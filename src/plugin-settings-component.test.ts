@@ -1,57 +1,47 @@
 import type { DataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import type { PluginEventSource } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
+import type { GenericObject } from 'obsidian-dev-utils/type-guards';
 
+import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   describe,
   expect,
-  it,
-  vi
+  it
 } from 'vitest';
 
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 
-vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-component', () => ({
-  PluginSettingsComponentBase: class {
-    public async onLoadRecord(_record: object): Promise<void> {
-      // Base no-op
-    }
-  }
-}));
+interface OnLoadRecordTestable {
+  onLoadRecord(record: GenericObject): Promise<void>;
+}
+
+function createComponent(): PluginSettingsComponent {
+  return new PluginSettingsComponent({
+    dataHandler: strictProxy<DataHandler>({}),
+    pluginEventSource: strictProxy<PluginEventSource>({})
+  });
+}
 
 describe('PluginSettingsComponent', () => {
   it('should create an instance', () => {
-    const component = new PluginSettingsComponent({
-      dataHandler: strictProxy<DataHandler>({}),
-      pluginEventSource: strictProxy<PluginEventSource>({})
-    });
-    expect(component).toBeInstanceOf(PluginSettingsComponent);
+    expect(createComponent()).toBeInstanceOf(PluginSettingsComponent);
   });
 
   describe('onLoadRecord', () => {
     it('should migrate legacy autoRefreshOnFileChange to shouldAutoRefreshOnFileChange', async () => {
-      const component = new PluginSettingsComponent({
-        dataHandler: strictProxy<DataHandler>({}),
-        pluginEventSource: strictProxy<PluginEventSource>({})
-      });
-
-      const record: Record<string, unknown> = { autoRefreshOnFileChange: true };
-      // eslint-disable-next-line no-restricted-syntax -- Accessing protected method for testing migration behavior.
-      await (component as unknown as { onLoadRecord(r: object): Promise<void> }).onLoadRecord(record);
+      const component = createComponent();
+      const record: GenericObject = { autoRefreshOnFileChange: true };
+      await castTo<OnLoadRecordTestable>(component).onLoadRecord(record);
 
       expect(record['shouldAutoRefreshOnFileChange']).toBe(true);
       expect(record['autoRefreshOnFileChange']).toBeUndefined();
     });
 
     it('should not modify record when legacy field is absent', async () => {
-      const component = new PluginSettingsComponent({
-        dataHandler: strictProxy<DataHandler>({}),
-        pluginEventSource: strictProxy<PluginEventSource>({})
-      });
-
-      const record: Record<string, unknown> = { shouldAutoRefreshOnFileChange: false };
-      // eslint-disable-next-line no-restricted-syntax -- Accessing protected method for testing migration behavior.
-      await (component as unknown as { onLoadRecord(r: object): Promise<void> }).onLoadRecord(record);
+      const component = createComponent();
+      const record: GenericObject = { shouldAutoRefreshOnFileChange: false };
+      await castTo<OnLoadRecordTestable>(component).onLoadRecord(record);
 
       expect(record['shouldAutoRefreshOnFileChange']).toBe(false);
       expect(record['autoRefreshOnFileChange']).toBeUndefined();

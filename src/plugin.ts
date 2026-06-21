@@ -1,7 +1,5 @@
 import type { TAbstractFile } from 'obsidian';
 
-import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
-
 import {
   FileView,
   ItemView,
@@ -25,6 +23,7 @@ import { isFile } from 'obsidian-dev-utils/obsidian/file-system';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
 import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
+import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
 import { RefreshActiveViewCommandHandler } from './command-handlers/refresh-active-view-command-handler.ts';
 import { RefreshAllOpenViewsCommandHandler } from './command-handlers/refresh-all-open-views-command-handler.ts';
@@ -38,51 +37,11 @@ type OnOpenTabHeaderMenuFn = WorkspaceLeaf['onOpenTabHeaderMenu'];
 export class Plugin extends PluginBase {
   private autoRefreshIntervalId: null | number = null;
   private readonly itemViews = new WeakSet<ItemView>();
-  private monkeyAroundComponent!: MonkeyAroundComponent;
-  private pluginSettingsComponent!: PluginSettingsComponent;
-
-  protected override onloadImpl(): void {
-    this.pluginSettingsComponent = this.addChild(
-      new PluginSettingsComponent({
-        dataHandler: new PluginDataHandler(this),
-        pluginEventSource: new PluginEventSourceImpl(this)
-      })
-    );
-    this.addChild(
-      new PluginSettingsTabComponent({
-        plugin: this,
-        pluginSettingsTab: new PluginSettingsTab({
-          plugin: this,
-          pluginSettingsComponent: this.pluginSettingsComponent
-        })
-      })
-    );
-    const menuEventRegistrarComponent = this.addChild(new MenuEventRegistrarComponent(this.app));
-    this.addChild(
-      new CommandHandlerComponent({
-        activeFileProvider: new AppActiveFileProvider(this.app),
-        commandHandlers: [
-          new RefreshActiveViewCommandHandler({
-            getActiveView: (): null | View => this.app.workspace.getActiveViewOfType(View),
-            refreshView: this.refreshView.bind(this)
-          }),
-          new RefreshAllVisibleViewsCommandHandler({
-            refreshAllVisibleViews: this.refreshAllVisibleViews.bind(this)
-          }),
-          new RefreshAllOpenViewsCommandHandler({
-            refreshAllOpenViews: this.refreshAllOpenViews.bind(this)
-          })
-        ],
-        commandRegistrar: new PluginCommandRegistrar(this),
-        menuEventRegistrar: menuEventRegistrarComponent,
-        pluginName: this.manifest.name
-      })
-    );
-    this.monkeyAroundComponent = this.addChild(new MonkeyAroundComponent());
-    this.addChild(new CallbackLayoutReadyComponent(this.app, () => this.onLayoutReady()));
-
-    this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
-  }
+  private readonly monkeyAroundComponent = new MonkeyAroundComponent();
+  private readonly pluginSettingsComponent = new PluginSettingsComponent({
+    dataHandler: new PluginDataHandler(this),
+    pluginEventSource: new PluginEventSourceImpl(this)
+  });
 
   public async refreshAllOpenViews(): Promise<void> {
     await this.refreshViews(() => true);
@@ -160,6 +119,44 @@ export class Plugin extends PluginBase {
         view.containerEl.scrollLeft = viewScrollLeft;
       });
     }
+  }
+
+  protected override onloadImpl(): void {
+    this.addChild(this.pluginSettingsComponent);
+    this.addChild(
+      new PluginSettingsTabComponent({
+        plugin: this,
+        pluginSettingsTab: new PluginSettingsTab({
+          plugin: this,
+          pluginSettingsComponent: this.pluginSettingsComponent
+        })
+      })
+    );
+    const menuEventRegistrarComponent = this.addChild(new MenuEventRegistrarComponent(this.app));
+    this.addChild(
+      new CommandHandlerComponent({
+        activeFileProvider: new AppActiveFileProvider(this.app),
+        commandHandlers: [
+          new RefreshActiveViewCommandHandler({
+            getActiveView: (): null | View => this.app.workspace.getActiveViewOfType(View),
+            refreshView: this.refreshView.bind(this)
+          }),
+          new RefreshAllVisibleViewsCommandHandler({
+            refreshAllVisibleViews: this.refreshAllVisibleViews.bind(this)
+          }),
+          new RefreshAllOpenViewsCommandHandler({
+            refreshAllOpenViews: this.refreshAllOpenViews.bind(this)
+          })
+        ],
+        commandRegistrar: new PluginCommandRegistrar(this),
+        menuEventRegistrar: menuEventRegistrarComponent,
+        pluginName: this.manifest.name
+      })
+    );
+    this.addChild(this.monkeyAroundComponent);
+    this.addChild(new CallbackLayoutReadyComponent(this.app, () => this.onLayoutReady()));
+
+    this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
   }
 
   private canAutoRefreshView(view: View): boolean {

@@ -1,21 +1,24 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-empty-function, @typescript-eslint/no-extraneous-class, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-useless-constructor, @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/require-await, func-style, no-restricted-syntax, obsidianmd/prefer-active-doc -- Test mocking patterns require flexible typing, empty constructors, mock calls, and direct document access. */
 import type {
-  App,
+  App as AppOriginal,
   PluginManifest,
   TAbstractFile,
-  View as ViewOriginal
+  View as ViewOriginal,
+  WorkspaceLeaf as WorkspaceLeafOriginal
 } from 'obsidian';
+import type { GenericVoidFunction } from 'obsidian-dev-utils/function';
 
-import {
-  FileView,
-  MarkdownView,
-  TextFileView,
-  WorkspaceLeaf
-} from 'obsidian';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
 import { noopAsync } from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
-import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import {
+  App,
+  FileView,
+  ItemView,
+  MarkdownView,
+  Menu,
+  TextFileView,
+  WorkspaceLeaf
+} from 'obsidian-test-mocks/obsidian';
 import {
   afterEach,
   beforeEach,
@@ -25,269 +28,130 @@ import {
   vi
 } from 'vitest';
 
-import { AutoRefreshMode } from './plugin-settings.ts';
+import { RefreshActiveViewCommandHandler } from './command-handlers/refresh-active-view-command-handler.ts';
+import {
+  AutoRefreshMode,
+  PluginSettings
+} from './plugin-settings.ts';
 import { Plugin } from './plugin.ts';
 
-// --- Constructible aliases for abstract obsidian View classes (mocked at runtime) ---
-
-const TextFileViewClass = castTo<new () => TextFileView>(TextFileView);
-const MarkdownViewClass = castTo<new () => MarkdownView>(MarkdownView);
-const FileViewClass = castTo<new () => FileView>(FileView);
-
-// --- Hoisted shared state ---
-
-const hoisted = vi.hoisted(() => ({
-  capturedLayoutReadyCallbacks: [] as (() => Promise<void>)[],
-  capturedRefreshActiveViewGetActiveView: [] as (() => unknown)[],
-  capturedRegisterCallbacks: [] as (() => void)[],
-  capturedSaveSettingsCallbacks: [] as (() => Promise<void>)[],
-  mockGetActiveViewOfType: vi.fn(() => null as null | ViewOriginal),
-  mockIsFile: vi.fn((_file: unknown) => true),
-  mockIterateAllLeaves: vi.fn(),
-  mockMonkeyAroundRegisterPatch: vi.fn(),
-  mockOnVault: vi.fn(() => ({ id: 'vault-event-ref' })),
-  mockOnWorkspace: vi.fn(() => ({ id: 'workspace-event-ref' })),
-  mockRegisterEvent: vi.fn(),
-  mockRegisterInterval: vi.fn(),
-  mockSettings: {
-    autoRefreshIntervalInSeconds: 5,
-    autoRefreshMode: 'Off',
-    excludeViewTypesForAutoRefresh: [] as string[],
-    includeViewTypesForAutoRefresh: [] as string[],
-    isViewTypeIncluded: vi.fn((_viewType: string) => true),
-    shouldAutoRefreshMarkdownViewInSourceMode: false,
-    shouldAutoRefreshOnFileChange: false,
-    shouldLoadDeferredViewsOnAutoRefresh: false,
-    shouldLoadDeferredViewsOnStart: false,
-    shouldUseQuickMarkdownViewRefresh: true
-  }
+// The real `PluginBase.onload()` loads dev-utils' own notice/context/debug components, which read a
+// Shared-state bag off the app via `getObsidianDevUtilsState`. The strict `App` mock has no such bag, so
+// Stub this one utility (return a fresh value wrapper per call) — mirroring dev-utils' own PluginBase test.
+vi.mock('obsidian-dev-utils/obsidian/app', async (importOriginal) => ({
+  ...await importOriginal<typeof import('obsidian-dev-utils/obsidian/app')>(),
+  getObsidianDevUtilsState: vi.fn((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }))
 }));
 
-// --- Mocks ---
-
-vi.mock('obsidian-dev-utils/obsidian/plugin/plugin', () => ({
-  PluginBase: class {
-    public app: App;
-    public manifest: PluginManifest;
-
-    public constructor(app: App, manifest: PluginManifest) {
-      this.app = app;
-      this.manifest = manifest;
-    }
-
-    public addChild<T>(child: T): T {
-      return child;
-    }
-
-    public async onload(): Promise<void> {}
-
-    public register(fn: () => void): void {
-      hoisted.capturedRegisterCallbacks.push(fn);
-    }
-
-    public registerEvent(ref: unknown): void {
-      hoisted.mockRegisterEvent(ref);
-    }
-
-    public registerInterval(id: number): number {
-      hoisted.mockRegisterInterval(id);
-      return id;
-    }
-  }
+// `getCacheSafe` and `isFile` are dev-utils utilities. Stubbing their RETURN VALUE (not their algorithm)
+// Is an allowed test double — the plugin's branches that depend on them are what we exercise.
+const mockGetCacheSafe = vi.fn((): Promise<undefined> => Promise.resolve(undefined));
+vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => ({
+  ...await importOriginal<typeof import('obsidian-dev-utils/obsidian/metadata-cache')>(),
+  getCacheSafe: (...args: unknown[]): Promise<undefined> => mockGetCacheSafe(...castTo<[]>(args))
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', () => ({
-  PluginSettingsTabComponent: class {
-    public constructor(_params: unknown) {}
-  }
+const mockIsFile = vi.fn((_file: unknown): boolean => true);
+vi.mock('obsidian-dev-utils/obsidian/file-system', async (importOriginal) => ({
+  ...await importOriginal<typeof import('obsidian-dev-utils/obsidian/file-system')>(),
+  isFile: (file: unknown): boolean => mockIsFile(file)
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/components/layout-ready-component', () => ({
-  CallbackLayoutReadyComponent: class {
-    public constructor(_app: unknown, callback: () => Promise<void>) {
-      hoisted.capturedLayoutReadyCallbacks.push(callback);
-    }
-  }
+// Dev-utils COLLABORATOR components added via `addChild` must be loadable (`addChild` eager-loads them).
+// We don't need their real behavior here, so stub each as a thin loadable `Component` (allowed double).
+interface ObsidianComponentModule {
+  Component: new () => object;
+}
+
+async function loadableComponentStub(): Promise<ReturnType<typeof vi.fn>> {
+  const { Component } = await vi.importActual<ObsidianComponentModule>('obsidian');
+  // Vitest requires a non-arrow function for a mock invoked with `new`; it must return a fresh real
+  // `Component` so the test-mocks `Component` constructor's strict proxy is not routed through the mock.
+  // eslint-disable-next-line prefer-arrow-callback -- vitest needs a non-arrow fn for `new`.
+  return vi.fn(function componentStub() {
+    return new Component();
+  });
+}
+
+vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', async () => ({
+  PluginSettingsTabComponent: await loadableComponentStub()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/components/menu-event-registrar-component', () => ({
-  MenuEventRegistrarComponent: class {
-    public constructor(_app: unknown) {}
-  }
+vi.mock('obsidian-dev-utils/obsidian/components/menu-event-registrar-component', async () => ({
+  MenuEventRegistrarComponent: await loadableComponentStub()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/command-handlers/command-handler-component', () => ({
-  CommandHandlerComponent: class {
-    public constructor(_params: unknown) {}
-  }
+vi.mock('obsidian-dev-utils/obsidian/command-handlers/command-handler-component', async () => ({
+  CommandHandlerComponent: await loadableComponentStub()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/components/monkey-around-component', () => ({
-  MonkeyAroundComponent: class {
-    public registerPatch = hoisted.mockMonkeyAroundRegisterPatch;
-  }
-}));
-
+// Non-child dev-utils collaborators (constructed, not added via `addChild`): plain `vi.fn()` stubs.
 vi.mock('obsidian-dev-utils/obsidian/data-handler', () => ({
-  PluginDataHandler: class {
-    public constructor(_plugin: unknown) {}
-  }
+  PluginDataHandler: vi.fn()
 }));
 
 vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-event-source', () => ({
-  PluginEventSourceImpl: class {
-    public constructor(_plugin: unknown) {}
-  }
+  PluginEventSourceImpl: vi.fn()
 }));
 
 vi.mock('obsidian-dev-utils/obsidian/command-registrar', () => ({
-  PluginCommandRegistrar: class {
-    public constructor(_plugin: unknown) {}
-  }
+  PluginCommandRegistrar: vi.fn()
 }));
 
 vi.mock('obsidian-dev-utils/obsidian/active-file-provider', () => ({
-  AppActiveFileProvider: class {
-    public constructor(_app: unknown) {}
+  AppActiveFileProvider: vi.fn()
+}));
+
+// The plugin's OWN settings component. We need a controllable `settings` object and an `on` method that
+// Captures the `saveSettings` callback. Make it a loadable `Component` carrying those members.
+const mockSettings = new PluginSettings();
+let capturedSaveSettingsCallback: (() => Promise<void>) | undefined;
+
+vi.mock('./plugin-settings-component.ts', async () => {
+  const { Component } = await vi.importActual<ObsidianComponentModule>('obsidian');
+
+  class PluginSettingsComponentStub extends castTo<new () => object>(Component) {
+    public on = vi.fn((_name: string, callback: () => Promise<void>) => {
+      capturedSaveSettingsCallback = callback;
+      return { asyncEventSource: { offref: vi.fn() } };
+    });
+
+    public settings = mockSettings;
   }
+
+  return { PluginSettingsComponent: PluginSettingsComponentStub };
+});
+
+vi.mock('./plugin-settings-tab.ts', () => ({
+  PluginSettingsTab: vi.fn()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/components/async-events-component', () => ({
-  registerAsyncEvent: vi.fn()
-}));
+let capturedGetActiveView: (() => null | ViewOriginal) | undefined;
 
-vi.mock('obsidian-dev-utils/async', () => ({
-  invokeAsyncSafely: vi.fn(async (fn: () => Promise<void>) => {
-    await fn();
+interface ActiveViewGetterHolder {
+  getActiveView(): null | ViewOriginal;
+}
+
+vi.mock('./command-handlers/refresh-active-view-command-handler.ts', () => ({
+  // eslint-disable-next-line prefer-arrow-callback -- vitest needs a non-arrow fn for `new`.
+  RefreshActiveViewCommandHandler: vi.fn(function refreshActiveViewCommandHandlerStub(params: ActiveViewGetterHolder) {
+    capturedGetActiveView = params.getActiveView;
   })
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/file-system', () => ({
-  isFile: (file: unknown) => hoisted.mockIsFile(file)
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/metadata-cache', () => ({
-  getCacheSafe: vi.fn(async () => undefined)
-}));
-
-vi.mock('./plugin-settings-component.ts', () => ({
-  PluginSettingsComponent: class {
-    public on = vi.fn((_event: string, handler: () => Promise<void>) => {
-      hoisted.capturedSaveSettingsCallbacks.push(handler);
-      return { id: 'settings-event-ref' };
-    });
-
-    public settings = hoisted.mockSettings;
-  }
-}));
-
-vi.mock('./plugin-settings-tab.ts', () => ({
-  PluginSettingsTab: class {
-    public constructor(_params: unknown) {}
-  }
-}));
-
-vi.mock('./command-handlers/refresh-active-view-command-handler.ts', () => ({
-  RefreshActiveViewCommandHandler: class {
-    public constructor(params: { getActiveView(): unknown }) {
-      hoisted.capturedRefreshActiveViewGetActiveView.push(params.getActiveView);
-    }
-  }
-}));
-
 vi.mock('./command-handlers/refresh-all-open-views-command-handler.ts', () => ({
-  RefreshAllOpenViewsCommandHandler: class {
-    public constructor(_params: unknown) {}
-  }
+  RefreshAllOpenViewsCommandHandler: vi.fn()
 }));
 
 vi.mock('./command-handlers/refresh-all-visible-views-command-handler.ts', () => ({
-  RefreshAllVisibleViewsCommandHandler: class {
-    public constructor(_params: unknown) {}
-  }
+  RefreshAllVisibleViewsCommandHandler: vi.fn()
 }));
 
-vi.mock('obsidian', async (importOriginal) => {
-  const original = await importOriginal<typeof import('obsidian')>();
-  return {
-    ...original,
-    FileView: class {},
-    ItemView: class {},
-    MarkdownView: class {
-      public containerEl = { scrollLeft: 0, scrollTop: 0 };
-      public dirty = false;
+// --- Plugin private surface (sanctioned `castTo<Testable>` access) ---
 
-      public editor = {
-        cm: {
-          dispatch: vi.fn(),
-          scrollDOM: { scrollTop: 0 },
-          state: {
-            doc: { length: 10 },
-            selection: {}
-          }
-        }
-      };
-
-      public file: null | unknown = null;
-
-      public getMode = vi.fn(() => 'source');
-
-      public getViewType = vi.fn(() => 'markdown');
-
-      public leaf = {
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred: vi.fn(async () => undefined),
-        rebuildView: vi.fn(async () => undefined),
-        view: null as null | unknown
-      };
-
-      public previewMode = { rerender: vi.fn() };
-
-      public save = vi.fn(async () => undefined);
-    },
-    Menu: {
-      forEvent: vi.fn(() => ({
-        addItem: vi.fn((cb: (item: unknown) => void) => {
-          cb({
-            onClick: vi.fn(),
-            setIcon: vi.fn(),
-            setSection: vi.fn(),
-            setTitle: vi.fn()
-          });
-        })
-      }))
-    },
-    TextFileView: class {
-      public dirty = false;
-      public save = vi.fn(async () => undefined);
-    },
-    View: class {},
-    WorkspaceLeaf: class {
-      public isDeferred = false;
-      public isVisible = vi.fn(() => false);
-      public loadIfDeferred = vi.fn(async () => undefined);
-      public rebuildView = vi.fn(async () => undefined);
-      public view: null | unknown = null;
-    }
-  };
-});
-
-// --- Plugin private interface ---
-
-interface MockApp {
-  vault: {
-    on: ReturnType<typeof vi.fn>;
-  };
-  workspace: {
-    getActiveViewOfType: ReturnType<typeof vi.fn>;
-    iterateAllLeaves: ReturnType<typeof vi.fn>;
-    on: ReturnType<typeof vi.fn>;
-  };
-}
-
-interface PluginPrivate {
+interface Testable {
   canAutoRefreshView(view: ViewOriginal): boolean;
+  copyViewTypeToClipboard(viewType: string): Promise<void>;
   executeKeepingFocus(callback: () => Promise<void>): Promise<void>;
   handleLayoutChange(): void;
   handleModify(file: TAbstractFile): void;
@@ -295,7 +159,7 @@ interface PluginPrivate {
   isVisibleView(view: ViewOriginal): boolean;
   loadDeferredViews(): Promise<void>;
   onLayoutReady(): Promise<void>;
-  onOpenTabHeaderMenu(next: (...args: unknown[]) => unknown, leaf: WorkspaceLeaf, evt: MouseEvent, parentEl: HTMLElement): void;
+  onOpenTabHeaderMenu(next: GenericVoidFunction, leaf: WorkspaceLeafOriginal, evt: MouseEvent, parentEl: HTMLElement): void;
   refreshAllOpenViews(): Promise<void>;
   refreshAllVisibleViews(): Promise<void>;
   refreshView(view: ViewOriginal): Promise<void>;
@@ -303,953 +167,874 @@ interface PluginPrivate {
   registerAutoRefreshTimer(): void;
 }
 
-// --- Helpers ---
+// The test-mocks view classes are runtime-concrete but typed `abstract` (mirroring Obsidian). Cast to a
+// Concrete constructor so the test can instantiate real instances for the source's `instanceof` checks.
+const TextFileViewClass = castTo<new (leaf: WorkspaceLeaf) => TextFileView>(TextFileView);
+const MarkdownViewClass = castTo<new (leaf: WorkspaceLeaf) => MarkdownView>(MarkdownView);
+const FileViewClass = castTo<new (leaf: WorkspaceLeaf) => FileView>(FileView);
+const ItemViewClass = castTo<new (leaf: WorkspaceLeaf) => ItemView>(ItemView);
 
-function asPrivate(plugin: Plugin): PluginPrivate {
-  return plugin as unknown as PluginPrivate;
+interface MenuItemTestable {
+  onClick__?(evt: unknown): void;
 }
 
-function createMockApp(): MockApp {
-  return {
-    vault: {
-      on: hoisted.mockOnVault
-    },
-    workspace: {
-      getActiveViewOfType: hoisted.mockGetActiveViewOfType,
-      iterateAllLeaves: hoisted.mockIterateAllLeaves,
-      on: hoisted.mockOnWorkspace
-    }
-  };
+interface MenuTestable {
+  items__: MenuItemTestable[];
 }
 
-function createPlugin(): Plugin {
-  const app = createMockApp();
-  const manifest = { id: 'refresh-preview', name: 'Refresh any view' } as PluginManifest;
-  return new Plugin(app as unknown as App, manifest);
+const manifest: PluginManifest = {
+  author: 'test',
+  description: 'test',
+  id: 'refresh-preview',
+  minAppVersion: '1.0.0',
+  name: 'Refresh any view',
+  version: '1.0.0'
+};
+
+type AddActionFn = (icon: string, title: string, callback: () => void) => HTMLElement;
+
+interface LeafStubSpec {
+  isDeferred?: boolean;
+  isVisible?: boolean;
+  loadIfDeferred?(): Promise<void>;
+  rebuildView?(): Promise<void>;
+  view?: ViewOriginal;
 }
 
-async function triggerLayoutReady(_plugin: Plugin): Promise<void> {
-  const callback = hoisted.capturedLayoutReadyCallbacks[hoisted.capturedLayoutReadyCallbacks.length - 1];
-  if (callback) {
-    await callback();
-  }
+interface ViewStubMembers {
+  containerEl?: HTMLElement;
+  getMode?(): string;
+  getViewType?(): string;
 }
 
-// --- Tests ---
+let app: AppOriginal;
+let appMock: App;
+let loadedPlugin: Plugin | undefined;
+let onWorkspace: ReturnType<typeof vi.fn>;
+let onVault: ReturnType<typeof vi.fn>;
+let getActiveViewOfType: ReturnType<typeof vi.fn>;
+let iterateAllLeaves: ReturnType<typeof vi.fn>;
 
 describe('Plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    hoisted.capturedLayoutReadyCallbacks.length = 0;
-    hoisted.capturedRefreshActiveViewGetActiveView.length = 0;
-    hoisted.capturedRegisterCallbacks.length = 0;
-    hoisted.capturedSaveSettingsCallbacks.length = 0;
-    hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.Off;
-    hoisted.mockSettings.shouldAutoRefreshOnFileChange = false;
-    hoisted.mockSettings.shouldLoadDeferredViewsOnStart = false;
-    hoisted.mockSettings.shouldUseQuickMarkdownViewRefresh = true;
-    hoisted.mockSettings.shouldAutoRefreshMarkdownViewInSourceMode = false;
-    hoisted.mockSettings.shouldLoadDeferredViewsOnAutoRefresh = false;
-    hoisted.mockSettings.isViewTypeIncluded.mockReturnValue(true);
-    hoisted.mockIsFile.mockReturnValue(true);
+    capturedSaveSettingsCallback = undefined;
+    capturedGetActiveView = undefined;
+    resetSettings();
+
+    onWorkspace = vi.fn(() => ({ id: 'workspace-event-ref' }));
+    onVault = vi.fn(() => ({ id: 'vault-event-ref' }));
+    getActiveViewOfType = vi.fn(() => null);
+    iterateAllLeaves = vi.fn();
+
+    appMock = App.createConfigured__();
+    appMock.workspace.onLayoutReady = vi.fn((cb: () => void) => {
+      cb();
+    });
+    appMock.workspace.on = castTo<typeof appMock.workspace.on>(onWorkspace);
+    appMock.workspace.getActiveViewOfType = castTo<typeof appMock.workspace.getActiveViewOfType>(getActiveViewOfType);
+    appMock.workspace.iterateAllLeaves = castTo<typeof appMock.workspace.iterateAllLeaves>(iterateAllLeaves);
+    appMock.vault.on = castTo<typeof appMock.vault.on>(onVault);
+    app = appMock.asOriginalType__();
   });
 
   afterEach(() => {
+    // Unload the loaded plugin so its real monkey-around patch on `WorkspaceLeaf.prototype` is removed,
+    // Preventing cross-test prototype-patch leakage.
+    loadedPlugin?.unload();
+    loadedPlugin = undefined;
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
-  describe('constructor', () => {
-    it('should create plugin instance', () => {
-      const plugin = createPlugin();
-      expect(plugin).toBeInstanceOf(Plugin);
+  describe('onload', () => {
+    it('should register the layout-change event', async () => {
+      const plugin = new Plugin(app, manifest);
+      await plugin.onload();
+      expect(onWorkspace).toHaveBeenCalledWith('layout-change', expect.any(Function));
     });
 
-    it('should register layout-change event on onload', async () => {
-      const plugin = createPlugin();
+    it('should wire getActiveView to workspace.getActiveViewOfType', async () => {
+      const plugin = new Plugin(app, manifest);
       await plugin.onload();
-      expect(hoisted.mockOnWorkspace).toHaveBeenCalledWith('layout-change', expect.any(Function));
+      expect(vi.mocked(RefreshActiveViewCommandHandler)).toHaveBeenCalled();
+      expect(capturedGetActiveView).toBeDefined();
+
+      const activeView = castTo<ViewOriginal>({});
+      getActiveViewOfType.mockReturnValue(activeView);
+      expect(capturedGetActiveView?.()).toBe(activeView);
     });
   });
 
   describe('refreshAllOpenViews', () => {
-    it('should include all leaves (condition always returns true)', async () => {
-      const plugin = createPlugin();
-      const loadIfDeferred = vi.fn(async () => undefined);
-      const rebuildView = vi.fn(async () => undefined);
-      const leaf = {
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred,
-        rebuildView,
-        view: null as unknown
-      };
-      const genericView = {
-        containerEl: { scrollLeft: 0, scrollTop: 0 },
-        getViewType: vi.fn(() => 'generic'),
-        leaf
-      };
-      leaf.view = genericView;
-      hoisted.mockIterateAllLeaves.mockImplementation((cb: (leaf: unknown) => void) => {
+    it('should rebuild every open view (condition always true)', async () => {
+      const plugin = await createLoadedPlugin();
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ rebuildView });
+      leaf.view = createGenericView({}, leaf);
+      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
         cb(leaf);
       });
-      await asPrivate(plugin).refreshAllOpenViews();
+
+      await testable(plugin).refreshAllOpenViews();
       expect(rebuildView).toHaveBeenCalled();
     });
   });
 
   describe('refreshAllVisibleViews', () => {
-    it('should iterate leaves using isVisibleView filter and exclude non-visible leaves', async () => {
-      const plugin = createPlugin();
-      const isVisible = vi.fn(() => false);
-      const leaf = {
-        isDeferred: false,
-        isVisible,
-        loadIfDeferred: vi.fn(async () => undefined),
-        rebuildView: vi.fn(async () => undefined),
-        view: null as unknown
-      };
-      const view = {
-        containerEl: { scrollLeft: 0, scrollTop: 0 },
-        getViewType: vi.fn(() => 'test'),
-        leaf: { isVisible }
-      };
-      leaf.view = view;
-      hoisted.mockIterateAllLeaves.mockImplementation((cb: (leaf: unknown) => void) => {
+    it('should skip non-visible leaves', async () => {
+      const plugin = await createLoadedPlugin();
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ isVisible: false, rebuildView });
+      leaf.view = createGenericView({}, leaf);
+      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
         cb(leaf);
       });
-      await asPrivate(plugin).refreshAllVisibleViews();
-      // Leaf was filtered out (not visible), so rebuildView was not called
-      expect(leaf.rebuildView).not.toHaveBeenCalled();
-      expect(hoisted.mockIterateAllLeaves).toHaveBeenCalled();
+
+      await testable(plugin).refreshAllVisibleViews();
+      expect(rebuildView).not.toHaveBeenCalled();
+      expect(iterateAllLeaves).toHaveBeenCalled();
+    });
+
+    it('should rebuild visible leaves', async () => {
+      const plugin = await createLoadedPlugin();
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ isVisible: true, rebuildView });
+      leaf.view = createGenericView({}, leaf);
+      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
+        cb(leaf);
+      });
+
+      await testable(plugin).refreshAllVisibleViews();
+      expect(rebuildView).toHaveBeenCalled();
     });
   });
 
   describe('refreshView', () => {
-    it('should call leaf.loadIfDeferred and leaf.rebuildView for generic view', async () => {
-      const plugin = createPlugin();
-      const loadIfDeferred = vi.fn(async () => undefined);
-      const rebuildView = vi.fn(async () => undefined);
-      const view = {
-        containerEl: { scrollLeft: 0, scrollTop: 0 },
-        getViewType: vi.fn(() => 'generic'),
-        leaf: {
-          isDeferred: false,
-          isVisible: vi.fn(() => false),
-          loadIfDeferred,
-          rebuildView
-        }
-      } as unknown as ViewOriginal;
-      await asPrivate(plugin).refreshView(view);
+    it('should load and rebuild a generic view', async () => {
+      const plugin = await createLoadedPlugin();
+      const loadIfDeferred = vi.fn(asyncNoop);
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ loadIfDeferred, rebuildView });
+      const view = createGenericView({}, leaf);
+
+      await testable(plugin).refreshView(view);
       expect(loadIfDeferred).toHaveBeenCalled();
       expect(rebuildView).toHaveBeenCalled();
     });
 
-    it('should save TextFileView when dirty', async () => {
-      const plugin = createPlugin();
-      const save = vi.fn(async () => undefined);
-      const rebuildView = vi.fn(async () => undefined);
-      const view = new TextFileViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['dirty'] = true;
-      view['save'] = save;
-      view.containerEl = castTo<HTMLElement>({ scrollLeft: 0, scrollTop: 0 });
-      view.leaf = castTo<WorkspaceLeaf>({
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred: vi.fn(async () => undefined),
-        rebuildView
-      });
-      await asPrivate(plugin).refreshView(view);
+    it('should save a dirty TextFileView before rebuilding', async () => {
+      const plugin = await createLoadedPlugin();
+      const save = vi.fn(asyncNoop);
+      const leaf = createLeafStub({});
+      const view = createTextFileView({ dirty: true, save }, leaf);
+
+      await testable(plugin).refreshView(view);
       expect(save).toHaveBeenCalled();
     });
 
-    it('should NOT save TextFileView when not dirty', async () => {
-      const plugin = createPlugin();
-      const save = vi.fn(async () => undefined);
-      const rebuildView = vi.fn(async () => undefined);
-      const view = new TextFileViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['dirty'] = false;
-      view['save'] = save;
-      view.containerEl = castTo<HTMLElement>({ scrollLeft: 0, scrollTop: 0 });
-      view.leaf = castTo<WorkspaceLeaf>({
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred: vi.fn(async () => undefined),
-        rebuildView
-      });
-      await asPrivate(plugin).refreshView(view);
+    it('should not save a clean TextFileView', async () => {
+      const plugin = await createLoadedPlugin();
+      const save = vi.fn(asyncNoop);
+      const leaf = createLeafStub({});
+      const view = createTextFileView({ dirty: false, save }, leaf);
+
+      await testable(plugin).refreshView(view);
       expect(save).not.toHaveBeenCalled();
     });
 
-    it('should use previewMode.rerender when in preview mode and shouldUseQuickMarkdownViewRefresh is true', async () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldUseQuickMarkdownViewRefresh = true;
+    it('should rerender in preview mode when quick refresh is enabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldUseQuickMarkdownViewRefresh = true;
       const rerender = vi.fn();
-      const rebuildView = vi.fn(async () => undefined);
-      const view = new MarkdownViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['getMode'] = vi.fn(() => 'preview');
-      view['previewMode'] = { rerender };
-      view.leaf = castTo<WorkspaceLeaf>({
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred: vi.fn(async () => undefined),
-        rebuildView
-      });
-      view.containerEl = castTo<HTMLElement>({ scrollLeft: 0, scrollTop: 0 });
-      view['file'] = null;
-      await asPrivate(plugin).refreshView(view);
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ rebuildView });
+      const view = createMarkdownView({ mode: 'preview', rerender }, leaf);
+
+      await testable(plugin).refreshView(view);
       expect(rerender).toHaveBeenCalledWith(true);
       expect(rebuildView).not.toHaveBeenCalled();
     });
 
-    it('should use leaf.rebuildView when in preview mode and shouldUseQuickMarkdownViewRefresh is false', async () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldUseQuickMarkdownViewRefresh = false;
-      const rebuildView = vi.fn(async () => undefined);
+    it('should rebuild in preview mode when quick refresh is disabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldUseQuickMarkdownViewRefresh = false;
       const rerender = vi.fn();
-      const view = new MarkdownViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['getMode'] = vi.fn(() => 'preview');
-      view['previewMode'] = { rerender };
-      view.leaf = castTo<WorkspaceLeaf>({
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred: vi.fn(async () => undefined),
-        rebuildView
-      });
-      view.containerEl = castTo<HTMLElement>({ scrollLeft: 0, scrollTop: 0 });
-      view['file'] = null;
-      await asPrivate(plugin).refreshView(view);
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ rebuildView });
+      const view = createMarkdownView({ mode: 'preview', rerender }, leaf);
+
+      await testable(plugin).refreshView(view);
       expect(rebuildView).toHaveBeenCalled();
       expect(rerender).not.toHaveBeenCalled();
     });
 
-    it('should dispatch changes in source mode when shouldUseQuickMarkdownViewRefresh is true', async () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldUseQuickMarkdownViewRefresh = true;
+    it('should dispatch editor changes in source mode when quick refresh is enabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldUseQuickMarkdownViewRefresh = true;
       const dispatch = vi.fn();
-      const rebuildView = vi.fn(async () => undefined);
-      const view = new MarkdownViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['getMode'] = vi.fn(() => 'source');
-      view['editor'] = {
-        cm: {
-          dispatch,
-          scrollDOM: { scrollTop: 0 },
-          state: {
-            doc: { length: 10 },
-            selection: {}
-          }
-        }
-      };
-      view.leaf = castTo<WorkspaceLeaf>({
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred: vi.fn(async () => undefined),
-        rebuildView
-      });
-      view.containerEl = castTo<HTMLElement>({ scrollLeft: 0, scrollTop: 0 });
-      view['file'] = null;
-      await asPrivate(plugin).refreshView(view);
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ rebuildView });
+      const view = createMarkdownView({ dispatch, mode: 'source' }, leaf);
+
+      await testable(plugin).refreshView(view);
       expect(dispatch).toHaveBeenCalled();
       expect(rebuildView).not.toHaveBeenCalled();
     });
 
-    it('should use leaf.rebuildView in source mode when shouldUseQuickMarkdownViewRefresh is false', async () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldUseQuickMarkdownViewRefresh = false;
-      const dispatch = vi.fn();
-      const rebuildView = vi.fn(async () => undefined);
-      const view = new MarkdownViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['getMode'] = vi.fn(() => 'source');
-      view['editor'] = {
-        cm: {
-          dispatch,
-          scrollDOM: { scrollTop: 0 },
-          state: {
-            doc: { length: 10 },
-            selection: {}
-          }
-        }
-      };
-      view.leaf = castTo<WorkspaceLeaf>({
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred: vi.fn(async () => undefined),
-        rebuildView
-      });
-      view.containerEl = castTo<HTMLElement>({ scrollLeft: 0, scrollTop: 0 });
-      view['file'] = null;
-      await asPrivate(plugin).refreshView(view);
+    it('should rebuild in source mode when quick refresh is disabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldUseQuickMarkdownViewRefresh = false;
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ rebuildView });
+      const view = createMarkdownView({ mode: 'source' }, leaf);
+
+      await testable(plugin).refreshView(view);
       expect(rebuildView).toHaveBeenCalled();
     });
 
-    it('should call getCacheSafe when MarkdownView has a file', async () => {
-      const { getCacheSafe } = await import('obsidian-dev-utils/obsidian/metadata-cache');
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldUseQuickMarkdownViewRefresh = false;
-      const rebuildView = vi.fn(async () => undefined);
-      const view = new MarkdownViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['getMode'] = vi.fn(() => 'source');
-      view['editor'] = {
-        cm: {
-          dispatch: vi.fn(),
-          scrollDOM: { scrollTop: 0 },
-          state: { doc: { length: 10 }, selection: {} }
-        }
-      };
-      view.leaf = castTo<WorkspaceLeaf>({
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred: vi.fn(async () => undefined),
-        rebuildView
-      });
-      view.containerEl = castTo<HTMLElement>({ scrollLeft: 0, scrollTop: 0 });
-      view['file'] = { path: 'test.md' };
-      await asPrivate(plugin).refreshView(view);
-      expect(getCacheSafe).toHaveBeenCalled();
+    it('should refresh the metadata cache when a MarkdownView has a file', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldUseQuickMarkdownViewRefresh = false;
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ rebuildView });
+      const view = createMarkdownView({ file: { path: 'test.md' }, mode: 'source' }, leaf);
+
+      await testable(plugin).refreshView(view);
+      expect(mockGetCacheSafe).toHaveBeenCalled();
     });
   });
 
   describe('handleLayoutChange', () => {
-    it('should not add action when itemView is null', async () => {
-      const plugin = createPlugin();
-      await plugin.onload();
-      hoisted.mockGetActiveViewOfType.mockReturnValue(null);
+    it('should do nothing when there is no active item view', async () => {
+      const plugin = await createLoadedPlugin();
+      getActiveViewOfType.mockReturnValue(null);
 
-      asPrivate(plugin).handleLayoutChange();
-
-      expect(hoisted.mockGetActiveViewOfType).toHaveBeenCalled();
+      testable(plugin).handleLayoutChange();
+      expect(getActiveViewOfType).toHaveBeenCalled();
     });
 
-    it('should add refresh action when itemView is present', async () => {
-      const plugin = createPlugin();
-      await plugin.onload();
-      const addAction = vi.fn(() => document.createElement('button'));
-      const itemView = {
-        addAction,
-        containerEl: { scrollLeft: 0, scrollTop: 0 },
-        getViewType: vi.fn(() => 'test'),
-        leaf: {
-          isDeferred: false,
-          isVisible: vi.fn(() => false),
-          loadIfDeferred: vi.fn(async () => undefined),
-          rebuildView: vi.fn(async () => undefined),
-          view: null as unknown
-        }
-      } as unknown as ViewOriginal;
-      hoisted.mockGetActiveViewOfType.mockReturnValue(itemView);
+    it('should add a refresh action for a new item view', async () => {
+      const plugin = await createLoadedPlugin();
+      const addAction = vi.fn((): HTMLElement => activeDocument.createElement('button'));
+      const itemView = createItemView({ addAction });
+      getActiveViewOfType.mockReturnValue(itemView);
 
-      asPrivate(plugin).handleLayoutChange();
-
+      testable(plugin).handleLayoutChange();
       expect(addAction).toHaveBeenCalledWith('refresh-cw', 'Refresh view', expect.any(Function));
     });
 
-    it('should not add action when itemView was already registered', async () => {
-      const plugin = createPlugin();
-      await plugin.onload();
-      const addAction = vi.fn(() => document.createElement('button'));
-      const itemView = {
-        addAction,
-        containerEl: { scrollLeft: 0, scrollTop: 0 },
-        getViewType: vi.fn(() => 'test'),
-        leaf: {
-          isDeferred: false,
-          isVisible: vi.fn(() => false),
-          loadIfDeferred: vi.fn(async () => undefined),
-          rebuildView: vi.fn(async () => undefined),
-          view: null as unknown
-        }
-      } as unknown as ViewOriginal;
-      hoisted.mockGetActiveViewOfType.mockReturnValue(itemView);
+    it('should not add a duplicate action for the same item view', async () => {
+      const plugin = await createLoadedPlugin();
+      const addAction = vi.fn((): HTMLElement => activeDocument.createElement('button'));
+      const itemView = createItemView({ addAction });
+      getActiveViewOfType.mockReturnValue(itemView);
 
-      asPrivate(plugin).handleLayoutChange();
-      asPrivate(plugin).handleLayoutChange();
-
+      testable(plugin).handleLayoutChange();
+      testable(plugin).handleLayoutChange();
       expect(addAction).toHaveBeenCalledTimes(1);
     });
 
-    it('should invoke refreshView when action button is clicked', async () => {
-      const plugin = createPlugin();
-      await plugin.onload();
-      let capturedCallback: () => void = () => undefined;
-      const addAction = vi.fn((_icon: string, _title: string, callback: () => void) => {
-        capturedCallback = callback;
-        return document.createElement('button');
+    it('should refresh the view when the action button is clicked', async () => {
+      const plugin = await createLoadedPlugin();
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ rebuildView });
+      let capturedAction: (() => void) | undefined;
+      const addAction = vi.fn((_icon: string, _title: string, callback: () => void): HTMLElement => {
+        capturedAction = callback;
+        return activeDocument.createElement('button');
       });
-      const itemView = {
-        addAction,
-        containerEl: { scrollLeft: 0, scrollTop: 0 },
-        getViewType: vi.fn(() => 'test'),
-        leaf: {
-          isDeferred: false,
-          isVisible: vi.fn(() => false),
-          loadIfDeferred: vi.fn(async () => undefined),
-          rebuildView: vi.fn(async () => undefined)
-        }
-      } as unknown as ViewOriginal;
-      hoisted.mockGetActiveViewOfType.mockReturnValue(itemView);
+      const itemView = createItemView({ addAction, leaf });
+      getActiveViewOfType.mockReturnValue(itemView);
 
-      asPrivate(plugin).handleLayoutChange();
-      capturedCallback();
+      testable(plugin).handleLayoutChange();
+      capturedAction?.();
+      await vi.waitFor(() => {
+        expect(rebuildView).toHaveBeenCalled();
+      });
+    });
 
-      expect(invokeAsyncSafely).toHaveBeenCalled();
+    it('should remove the action button on cleanup', async () => {
+      const plugin = await createLoadedPlugin();
+      const button = activeDocument.createElement('button');
+      activeDocument.body.appendChild(button);
+      const removeSpy = vi.spyOn(button, 'remove');
+      const addAction = vi.fn((): HTMLElement => button);
+      const itemView = createItemView({ addAction });
+      getActiveViewOfType.mockReturnValue(itemView);
+
+      let capturedCleanup: (() => void) | undefined;
+      vi.spyOn(plugin, 'register').mockImplementation((cleanup: () => void) => {
+        capturedCleanup = cleanup;
+      });
+
+      testable(plugin).handleLayoutChange();
+      capturedCleanup?.();
+      expect(removeSpy).toHaveBeenCalled();
     });
   });
 
   describe('handleModify', () => {
-    it('should not refresh when shouldAutoRefreshOnFileChange is false', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldAutoRefreshOnFileChange = false;
-      const file = { path: 'test.md' } as TAbstractFile;
+    it('should do nothing when auto-refresh on file change is disabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldAutoRefreshOnFileChange = false;
 
-      asPrivate(plugin).handleModify(file);
-
-      expect(hoisted.mockIterateAllLeaves).not.toHaveBeenCalled();
+      testable(plugin).handleModify(castTo<TAbstractFile>({ path: 'test.md' }));
+      expect(iterateAllLeaves).not.toHaveBeenCalled();
     });
 
-    it('should not refresh when file is a folder (isFile returns false)', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldAutoRefreshOnFileChange = true;
-      hoisted.mockIsFile.mockReturnValue(false);
-      const folder = { children: [], path: 'folder' } as unknown as TAbstractFile;
+    it('should do nothing when the modified target is not a file', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldAutoRefreshOnFileChange = true;
+      mockIsFile.mockReturnValue(false);
 
-      asPrivate(plugin).handleModify(folder);
-
-      expect(hoisted.mockIterateAllLeaves).not.toHaveBeenCalled();
+      testable(plugin).handleModify(castTo<TAbstractFile>({ path: 'folder' }));
+      expect(iterateAllLeaves).not.toHaveBeenCalled();
     });
 
-    it('should invoke refresh when shouldAutoRefreshOnFileChange is true and file is a file', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldAutoRefreshOnFileChange = true;
-      hoisted.mockIsFile.mockReturnValue(true);
-      const file = { path: 'test.md' } as TAbstractFile;
-      hoisted.mockIterateAllLeaves.mockImplementation((_cb: (leaf: unknown) => void) => {
-        // No matching leaves
+    it('should refresh matching FileViews when an open file is modified', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldAutoRefreshOnFileChange = true;
+      mockIsFile.mockReturnValue(true);
+      const sharedFile = castTo<TAbstractFile>({ path: 'test.md' });
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ rebuildView });
+      leaf.view = createFileView({ file: sharedFile, viewType: 'test' }, leaf);
+      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
+        cb(leaf);
       });
 
-      asPrivate(plugin).handleModify(file);
-
-      expect(invokeAsyncSafely).toHaveBeenCalled();
+      testable(plugin).handleModify(sharedFile);
+      await vi.waitFor(() => {
+        expect(rebuildView).toHaveBeenCalled();
+      });
     });
   });
 
   describe('isMatchingAutoRefreshMode', () => {
-    it('should return false when mode is Off', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.Off;
-      const view = {} as ViewOriginal;
-      expect(asPrivate(plugin).isMatchingAutoRefreshMode(view)).toBe(false);
+    it('should return false in Off mode', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.Off;
+      expect(testable(plugin).isMatchingAutoRefreshMode(castTo<ViewOriginal>({}))).toBe(false);
     });
 
-    it('should return true when view is active for ActiveView mode', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.ActiveView;
-      const view = {} as ViewOriginal;
-      hoisted.mockGetActiveViewOfType.mockReturnValue(view);
-      expect(asPrivate(plugin).isMatchingAutoRefreshMode(view)).toBe(true);
+    it('should return true for the active view in ActiveView mode', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.ActiveView;
+      const view = castTo<ViewOriginal>({});
+      getActiveViewOfType.mockReturnValue(view);
+      expect(testable(plugin).isMatchingAutoRefreshMode(view)).toBe(true);
     });
 
-    it('should return false for non-active view in ActiveView mode', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.ActiveView;
-      const view = {} as ViewOriginal;
-      hoisted.mockGetActiveViewOfType.mockReturnValue({} as ViewOriginal);
-      expect(asPrivate(plugin).isMatchingAutoRefreshMode(view)).toBe(false);
+    it('should return false for a non-active view in ActiveView mode', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.ActiveView;
+      getActiveViewOfType.mockReturnValue(castTo<ViewOriginal>({}));
+      expect(testable(plugin).isMatchingAutoRefreshMode(castTo<ViewOriginal>({}))).toBe(false);
     });
 
-    it('should return true for AllOpenViews mode', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
-      const view = {} as ViewOriginal;
-      expect(asPrivate(plugin).isMatchingAutoRefreshMode(view)).toBe(true);
+    it('should return true in AllOpenViews mode', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
+      expect(testable(plugin).isMatchingAutoRefreshMode(castTo<ViewOriginal>({}))).toBe(true);
     });
 
-    it('should return true for visible view in AllVisibleViews mode', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.AllVisibleViews;
-      const isVisible = vi.fn(() => true);
-      const view = { leaf: { isVisible } } as unknown as ViewOriginal;
-      expect(asPrivate(plugin).isMatchingAutoRefreshMode(view)).toBe(true);
+    it('should return true for a visible view in AllVisibleViews mode', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.AllVisibleViews;
+      const view = strictProxy<ViewOriginal>({ leaf: strictProxy<WorkspaceLeafOriginal>({ isVisible: () => true }) });
+      expect(testable(plugin).isMatchingAutoRefreshMode(view)).toBe(true);
     });
 
-    it('should return false for non-visible view in AllVisibleViews mode', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.AllVisibleViews;
-      const isVisible = vi.fn(() => false);
-      const view = { leaf: { isVisible } } as unknown as ViewOriginal;
-      expect(asPrivate(plugin).isMatchingAutoRefreshMode(view)).toBe(false);
+    it('should return false for a non-visible view in AllVisibleViews mode', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.AllVisibleViews;
+      const view = strictProxy<ViewOriginal>({ leaf: strictProxy<WorkspaceLeafOriginal>({ isVisible: () => false }) });
+      expect(testable(plugin).isMatchingAutoRefreshMode(view)).toBe(false);
     });
 
-    it('should return false for unknown mode via default branch', () => {
-      const plugin = createPlugin();
-
-      hoisted.mockSettings.autoRefreshMode = 'UnknownMode';
-      const view = {} as ViewOriginal;
-      expect(asPrivate(plugin).isMatchingAutoRefreshMode(view)).toBe(false);
+    it('should return false for an unknown mode via the default branch', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = castTo<AutoRefreshMode>('UnknownMode');
+      expect(testable(plugin).isMatchingAutoRefreshMode(castTo<ViewOriginal>({}))).toBe(false);
     });
   });
 
   describe('isVisibleView', () => {
-    it('should return true when leaf.isVisible() is true', () => {
-      const plugin = createPlugin();
-      const view = { leaf: { isVisible: () => true } } as unknown as ViewOriginal;
-      expect(asPrivate(plugin).isVisibleView(view)).toBe(true);
-    });
-
-    it('should return false when leaf.isVisible() is false', () => {
-      const plugin = createPlugin();
-      const view = { leaf: { isVisible: () => false } } as unknown as ViewOriginal;
-      expect(asPrivate(plugin).isVisibleView(view)).toBe(false);
+    it('should reflect the leaf visibility', async () => {
+      const plugin = await createLoadedPlugin();
+      const visibleView = strictProxy<ViewOriginal>({ leaf: strictProxy<WorkspaceLeafOriginal>({ isVisible: () => true }) });
+      const hiddenView = strictProxy<ViewOriginal>({ leaf: strictProxy<WorkspaceLeafOriginal>({ isVisible: () => false }) });
+      expect(testable(plugin).isVisibleView(visibleView)).toBe(true);
+      expect(testable(plugin).isVisibleView(hiddenView)).toBe(false);
     });
   });
 
   describe('canAutoRefreshView', () => {
-    it('should return false when viewType is not included', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.isViewTypeIncluded.mockReturnValue(false);
-      const view = {
+    it('should return false when the view type is excluded', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.includeViewTypesForAutoRefresh = ['other'];
+      const view = strictProxy<ViewOriginal>({
         getViewType: () => 'some-type',
-        leaf: { isDeferred: false }
-      } as unknown as ViewOriginal;
-      expect(asPrivate(plugin).canAutoRefreshView(view)).toBe(false);
+        leaf: strictProxy<WorkspaceLeafOriginal>({ isDeferred: false })
+      });
+      expect(testable(plugin).canAutoRefreshView(view)).toBe(false);
     });
 
-    it('should return false when leaf is deferred and shouldLoadDeferredViewsOnAutoRefresh is false', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.isViewTypeIncluded.mockReturnValue(true);
-      hoisted.mockSettings.shouldLoadDeferredViewsOnAutoRefresh = false;
-      const view = {
+    it('should return false for a deferred leaf when loading deferred views on auto-refresh is disabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldLoadDeferredViewsOnAutoRefresh = false;
+      const view = strictProxy<ViewOriginal>({
         getViewType: () => 'test',
-        leaf: { isDeferred: true }
-      } as unknown as ViewOriginal;
-      expect(asPrivate(plugin).canAutoRefreshView(view)).toBe(false);
+        leaf: strictProxy<WorkspaceLeafOriginal>({ isDeferred: true })
+      });
+      expect(testable(plugin).canAutoRefreshView(view)).toBe(false);
     });
 
-    it('should return true when leaf is deferred but shouldLoadDeferredViewsOnAutoRefresh is true', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.isViewTypeIncluded.mockReturnValue(true);
-      hoisted.mockSettings.shouldLoadDeferredViewsOnAutoRefresh = true;
-      const view = {
+    it('should return true for a deferred leaf when loading deferred views on auto-refresh is enabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldLoadDeferredViewsOnAutoRefresh = true;
+      const view = strictProxy<ViewOriginal>({
         getViewType: () => 'test',
-        leaf: { isDeferred: true }
-      } as unknown as ViewOriginal;
-      expect(asPrivate(plugin).canAutoRefreshView(view)).toBe(true);
+        leaf: strictProxy<WorkspaceLeafOriginal>({ isDeferred: true })
+      });
+      expect(testable(plugin).canAutoRefreshView(view)).toBe(true);
     });
 
-    it('should return false for MarkdownView in source mode when shouldAutoRefreshMarkdownViewInSourceMode is false', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.isViewTypeIncluded.mockReturnValue(true);
-      hoisted.mockSettings.shouldAutoRefreshMarkdownViewInSourceMode = false;
-      const view = new MarkdownViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['getMode'] = vi.fn(() => 'source');
-      view.leaf = castTo<WorkspaceLeaf>({ isDeferred: false });
-      view.getViewType = vi.fn(() => 'markdown');
-      expect(asPrivate(plugin).canAutoRefreshView(view)).toBe(false);
+    it('should return false for a source-mode MarkdownView when source-mode auto-refresh is disabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldAutoRefreshMarkdownViewInSourceMode = false;
+      const leaf = createLeafStub({});
+      const view = createMarkdownView({ mode: 'source', viewType: 'markdown' }, leaf);
+      expect(testable(plugin).canAutoRefreshView(view)).toBe(false);
     });
 
-    it('should return true for MarkdownView in source mode when shouldAutoRefreshMarkdownViewInSourceMode is true', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.isViewTypeIncluded.mockReturnValue(true);
-      hoisted.mockSettings.shouldAutoRefreshMarkdownViewInSourceMode = true;
-      const view = new MarkdownViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['getMode'] = vi.fn(() => 'source');
-      view.leaf = castTo<WorkspaceLeaf>({ isDeferred: false });
-      view.getViewType = vi.fn(() => 'markdown');
-      expect(asPrivate(plugin).canAutoRefreshView(view)).toBe(true);
+    it('should return true for a source-mode MarkdownView when source-mode auto-refresh is enabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldAutoRefreshMarkdownViewInSourceMode = true;
+      const leaf = createLeafStub({});
+      const view = createMarkdownView({ mode: 'source', viewType: 'markdown' }, leaf);
+      expect(testable(plugin).canAutoRefreshView(view)).toBe(true);
     });
 
-    it('should return true for MarkdownView in preview mode regardless of source mode setting', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.isViewTypeIncluded.mockReturnValue(true);
-      hoisted.mockSettings.shouldAutoRefreshMarkdownViewInSourceMode = false;
-      const view = new MarkdownViewClass() as unknown as Record<string, unknown> & ViewOriginal;
-      view['getMode'] = vi.fn(() => 'preview');
-      view.leaf = castTo<WorkspaceLeaf>({ isDeferred: false });
-      view.getViewType = vi.fn(() => 'markdown');
-      expect(asPrivate(plugin).canAutoRefreshView(view)).toBe(true);
+    it('should return true for a preview-mode MarkdownView regardless of the source-mode setting', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldAutoRefreshMarkdownViewInSourceMode = false;
+      const leaf = createLeafStub({});
+      const view = createMarkdownView({ mode: 'preview', viewType: 'markdown' }, leaf);
+      expect(testable(plugin).canAutoRefreshView(view)).toBe(true);
     });
   });
 
   describe('loadDeferredViews', () => {
-    it('should return early when shouldLoadDeferredViewsOnStart is false', async () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldLoadDeferredViewsOnStart = false;
-      await asPrivate(plugin).loadDeferredViews();
-      expect(hoisted.mockIterateAllLeaves).not.toHaveBeenCalled();
+    it('should return early when loading deferred views on start is disabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldLoadDeferredViewsOnStart = false;
+      await testable(plugin).loadDeferredViews();
+      expect(iterateAllLeaves).not.toHaveBeenCalled();
     });
 
-    it('should load deferred views when shouldLoadDeferredViewsOnStart is true', async () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldLoadDeferredViewsOnStart = true;
-      const loadIfDeferred = vi.fn(async () => undefined);
-      hoisted.mockIterateAllLeaves.mockImplementation((cb: (leaf: unknown) => void) => {
-        cb({ isDeferred: true, loadIfDeferred, view: {} });
+    it('should load deferred views when loading deferred views on start is enabled', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.shouldLoadDeferredViewsOnStart = true;
+      const loadIfDeferred = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ isDeferred: true, loadIfDeferred });
+      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
+        cb(leaf);
       });
-      await asPrivate(plugin).loadDeferredViews();
+
+      vi.useFakeTimers();
+      const promise = testable(plugin).loadDeferredViews();
+      await vi.runAllTimersAsync();
+      await promise;
       expect(loadIfDeferred).toHaveBeenCalled();
     });
   });
 
   describe('onLayoutReady', () => {
-    it('should register vault modify event and setup patches', async () => {
-      const plugin = createPlugin();
-      await plugin.onload();
-      // Make getActiveViewOfType return null so handleLayoutChange() skips addAction
-      hoisted.mockGetActiveViewOfType.mockReturnValue(null);
-      await triggerLayoutReady(plugin);
-      expect(hoisted.mockOnVault).toHaveBeenCalledWith('modify', expect.any(Function));
-      expect(hoisted.mockMonkeyAroundRegisterPatch).toHaveBeenCalledWith(
-        WorkspaceLeaf.prototype,
-        expect.objectContaining({ onOpenTabHeaderMenu: expect.any(Function) })
-      );
+    it('should register the vault modify event and the saveSettings listener', async () => {
+      const plugin = await createLoadedPlugin();
+      getActiveViewOfType.mockReturnValue(null);
+
+      await testable(plugin).onLayoutReady();
+
+      expect(onVault).toHaveBeenCalledWith('modify', expect.any(Function));
+      expect(capturedSaveSettingsCallback).toBeDefined();
     });
 
-    it('should register saveSettings listener and call registerAutoRefreshTimer on change', async () => {
-      const plugin = createPlugin();
-      await plugin.onload();
-      hoisted.mockGetActiveViewOfType.mockReturnValue(null);
-      await triggerLayoutReady(plugin);
+    it('should re-register the auto-refresh timer when settings are saved', async () => {
+      const plugin = await createLoadedPlugin();
+      getActiveViewOfType.mockReturnValue(null);
+      await testable(plugin).onLayoutReady();
 
-      const saveCallback = hoisted.capturedSaveSettingsCallbacks[0];
-      expect(saveCallback).toBeDefined();
-      await saveCallback?.();
+      mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
+      mockSettings.autoRefreshIntervalInSeconds = 1;
+      vi.useFakeTimers();
+      const setIntervalSpy = vi.spyOn(window, 'setInterval');
+      await capturedSaveSettingsCallback?.();
+      expect(setIntervalSpy).toHaveBeenCalled();
     });
 
-    it('should produce onOpenTabHeaderMenu patch that calls next and adds menu items', async () => {
-      const plugin = createPlugin();
-      await plugin.onload();
-      hoisted.mockGetActiveViewOfType.mockReturnValue(null);
-      await triggerLayoutReady(plugin);
+    it('should install a working onOpenTabHeaderMenu patch on WorkspaceLeaf', async () => {
+      const plugin = await createLoadedPlugin();
+      getActiveViewOfType.mockReturnValue(null);
+      // Spy on the bridge-provided base BEFORE patching so the real patch captures it as `next`.
+      // The mock `WorkspaceLeaf` type omits this obsidian-typings member (it is added by the bridge),
+      // So reach it through the augmented `obsidian` type.
+      const baseSpy = vi.spyOn(castTo<WorkspaceLeafOriginal>(WorkspaceLeaf.prototype), 'onOpenTabHeaderMenu');
+      await testable(plugin).onLayoutReady();
 
-      const patchCall = hoisted.mockMonkeyAroundRegisterPatch.mock.calls[0];
-      const patches = patchCall?.[1] as Record<string, (next: (...args: unknown[]) => unknown) => (...args: unknown[]) => unknown>;
-      const patchFactory = patches?.['onOpenTabHeaderMenu'];
-      expect(patchFactory).toBeDefined();
-
-      const next = vi.fn();
-      const patched = ensureNonNullable(patchFactory)(next);
-      const addItem = vi.fn((cb: (item: unknown) => void) => {
-        cb({
-          onClick: vi.fn(),
-          setIcon: vi.fn(),
-          setSection: vi.fn(),
-          setTitle: vi.fn()
-        });
-      });
-      const { Menu } = await import('obsidian');
-      Menu.forEvent = vi.fn(() => ({ addItem })) as unknown as typeof Menu.forEvent;
-      const leaf = {
-        view: { getViewType: vi.fn(() => 'markdown') }
-      };
+      const leaf = realLeaf();
+      leaf.view = castTo<ViewOriginal>({ getViewType: () => 'markdown' });
+      const forEventSpy = vi.spyOn(Menu, 'forEvent');
       const evt = new MouseEvent('click');
-      const parentEl = document.createElement('div');
-      patched.call(leaf, evt, parentEl);
-      expect(next).toHaveBeenCalled();
-      expect(addItem).toHaveBeenCalledTimes(2);
-    });
-  });
+      const parentEl = activeDocument.createElement('div');
 
-  describe('registerAutoRefreshTimer', () => {
-    it('should not set interval when autoRefreshMode is Off', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.Off;
-      vi.useFakeTimers();
-      asPrivate(plugin).registerAutoRefreshTimer();
-      expect(hoisted.mockRegisterInterval).not.toHaveBeenCalled();
-    });
+      castTo<WorkspaceLeafOriginal>(leaf).onOpenTabHeaderMenu(evt, parentEl);
 
-    it('should set interval when autoRefreshMode is not Off', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
-      hoisted.mockSettings.autoRefreshIntervalInSeconds = 5;
-      vi.useFakeTimers();
-      asPrivate(plugin).registerAutoRefreshTimer();
-      expect(hoisted.mockRegisterInterval).toHaveBeenCalled();
-    });
-
-    it('should clear previous interval when called again', () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
-      hoisted.mockSettings.autoRefreshIntervalInSeconds = 5;
-      vi.useFakeTimers();
-      const clearIntervalSpy = vi.spyOn(window, 'clearInterval');
-      asPrivate(plugin).registerAutoRefreshTimer();
-      asPrivate(plugin).registerAutoRefreshTimer();
-      expect(clearIntervalSpy).toHaveBeenCalled();
-    });
-
-    it('should invoke refreshViews when interval fires', async () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
-      hoisted.mockSettings.autoRefreshIntervalInSeconds = 1;
-      hoisted.mockIterateAllLeaves.mockImplementation((_cb: (leaf: unknown) => void) => {
-        // No leaves
-      });
-      vi.useFakeTimers();
-      asPrivate(plugin).registerAutoRefreshTimer();
-      await vi.advanceTimersByTimeAsync(1000);
-      expect(invokeAsyncSafely).toHaveBeenCalled();
+      expect(baseSpy).toHaveBeenCalled();
+      const menu = castTo<MenuTestable>(forEventSpy.mock.results[0]?.value);
+      expect(menu.items__).toHaveLength(2);
     });
   });
 
   describe('onOpenTabHeaderMenu', () => {
-    it('should call next and add two menu items', async () => {
-      const plugin = createPlugin();
+    it('should chain to next and add two menu items', async () => {
+      const plugin = await createLoadedPlugin();
       const next = vi.fn();
-      const addItem = vi.fn((cb: (item: unknown) => void) => {
-        cb({
-          onClick: vi.fn((_handler: () => void) => undefined),
-          setIcon: vi.fn(),
-          setSection: vi.fn(),
-          setTitle: vi.fn()
-        });
-      });
-      const { Menu } = await import('obsidian');
-      Menu.forEvent = vi.fn(() => ({ addItem })) as unknown as typeof Menu.forEvent;
+      const forEventSpy = vi.spyOn(Menu, 'forEvent');
+      const leaf = strictProxy<WorkspaceLeafOriginal>({ view: castTo<ViewOriginal>({ getViewType: () => 'test' }) });
       const evt = new MouseEvent('click');
-      const leaf = {
-        view: { getViewType: vi.fn(() => 'test') }
-      } as unknown as WorkspaceLeaf;
-      const parentEl = document.createElement('div');
-      asPrivate(plugin).onOpenTabHeaderMenu(next, leaf, evt, parentEl);
+      const parentEl = activeDocument.createElement('div');
+
+      testable(plugin).onOpenTabHeaderMenu(next, leaf, evt, parentEl);
+
       expect(next).toHaveBeenCalled();
-      expect(addItem).toHaveBeenCalledTimes(2);
+      const menu = castTo<MenuTestable>(forEventSpy.mock.results[0]?.value);
+      expect(menu.items__).toHaveLength(2);
     });
 
-    it('should invoke refreshView when first menu item is clicked', async () => {
-      const plugin = createPlugin();
+    it('should refresh the leaf view when the first menu item is clicked', async () => {
+      const plugin = await createLoadedPlugin();
       const next = vi.fn();
-      let capturedOnClick: (() => void) | undefined;
-      const addItem = vi.fn((cb: (item: unknown) => void) => {
-        const item = {
-          onClick: vi.fn((handler: () => void) => {
-            if (!capturedOnClick) {
-              capturedOnClick = handler;
-            }
-          }),
-          setIcon: vi.fn(),
-          setSection: vi.fn(),
-          setTitle: vi.fn()
-        };
-        cb(item);
-      });
-      const { Menu } = await import('obsidian');
-      Menu.forEvent = vi.fn(() => ({ addItem })) as unknown as typeof Menu.forEvent;
+      const forEventSpy = vi.spyOn(Menu, 'forEvent');
+      const rebuildView = vi.fn(asyncNoop);
+      const innerLeaf = createLeafStub({ rebuildView });
+      const view = createGenericView({}, innerLeaf);
+      const leaf = strictProxy<WorkspaceLeafOriginal>({ view });
       const evt = new MouseEvent('click');
-      const rebuildView = vi.fn(async () => undefined);
-      const leaf = {
-        view: {
-          containerEl: { scrollLeft: 0, scrollTop: 0 },
-          getViewType: vi.fn(() => 'test'),
-          leaf: {
-            isDeferred: false,
-            isVisible: vi.fn(() => false),
-            loadIfDeferred: vi.fn(async () => undefined),
-            rebuildView
-          }
-        }
-      } as unknown as WorkspaceLeaf;
-      leaf.view.leaf = leaf;
-      const parentEl = document.createElement('div');
-      asPrivate(plugin).onOpenTabHeaderMenu(next, leaf, evt, parentEl);
-      capturedOnClick?.();
-      expect(invokeAsyncSafely).toHaveBeenCalled();
+      const parentEl = activeDocument.createElement('div');
+
+      testable(plugin).onOpenTabHeaderMenu(next, leaf, evt, parentEl);
+
+      const menu = castTo<MenuTestable>(forEventSpy.mock.results[0]?.value);
+      const firstItem = menu.items__[0];
+      firstItem?.onClick__?.(evt);
+      await vi.waitFor(() => {
+        expect(rebuildView).toHaveBeenCalled();
+      });
     });
 
-    it('should invoke copyViewTypeToClipboard when second menu item is clicked', async () => {
-      const plugin = createPlugin();
+    it('should copy the view type to the clipboard when the second menu item is clicked', async () => {
+      const plugin = await createLoadedPlugin();
       const next = vi.fn();
-      let clickCount = 0;
-      let capturedSecondOnClick: (() => void) | undefined;
-      const addItem = vi.fn((cb: (item: unknown) => void) => {
-        const item = {
-          onClick: vi.fn((handler: () => void) => {
-            clickCount++;
-            if (clickCount === 2) {
-              capturedSecondOnClick = handler;
-            }
-          }),
-          setIcon: vi.fn(),
-          setSection: vi.fn(),
-          setTitle: vi.fn()
-        };
-        cb(item);
+      const forEventSpy = vi.spyOn(Menu, 'forEvent');
+      const writeText = vi.fn(asyncNoop);
+      Object.defineProperty(activeWindow.navigator, 'clipboard', {
+        configurable: true,
+        value: castTo<Clipboard>({ writeText })
       });
-      const { Menu } = await import('obsidian');
-      Menu.forEvent = vi.fn(() => ({ addItem })) as unknown as typeof Menu.forEvent;
+      const leaf = strictProxy<WorkspaceLeafOriginal>({ view: castTo<ViewOriginal>({ getViewType: () => 'test-view' }) });
       const evt = new MouseEvent('click');
-      const leaf = {
-        view: { getViewType: vi.fn(() => 'test-view') }
-      } as unknown as WorkspaceLeaf;
-      const parentEl = document.createElement('div');
-      asPrivate(plugin).onOpenTabHeaderMenu(next, leaf, evt, parentEl);
-      capturedSecondOnClick?.();
-      expect(invokeAsyncSafely).toHaveBeenCalled();
-    });
-  });
+      const parentEl = activeDocument.createElement('div');
 
-  describe('executeKeepingFocus', () => {
-    it('should execute callback and restore focus to active element', async () => {
-      const plugin = createPlugin();
-      const btn = document.createElement('button');
-      document.body.appendChild(btn);
-      const focusSpy = vi.spyOn(btn, 'focus');
-      btn.focus();
-      const callback = vi.fn(async () => undefined);
-      await asPrivate(plugin).executeKeepingFocus(callback);
-      expect(callback).toHaveBeenCalled();
-      expect(focusSpy).toHaveBeenCalled();
-      btn.remove();
-    });
+      testable(plugin).onOpenTabHeaderMenu(next, leaf, evt, parentEl);
 
-    it('should restore focus even when callback throws', async () => {
-      const plugin = createPlugin();
-      const btn = document.createElement('button');
-      document.body.appendChild(btn);
-      const focusSpy = vi.spyOn(btn, 'focus');
-      btn.focus();
-      const callback = vi.fn(async () => {
-        throw new Error('test error');
+      const menu = castTo<MenuTestable>(forEventSpy.mock.results[0]?.value);
+      const secondItem = menu.items__[1];
+      secondItem?.onClick__?.(evt);
+      await vi.waitFor(() => {
+        expect(writeText).toHaveBeenCalledWith('test-view');
       });
-      await expect(asPrivate(plugin).executeKeepingFocus(callback)).rejects.toThrow('test error');
-      expect(focusSpy).toHaveBeenCalled();
-      btn.remove();
-    });
-
-    it('should not call focus when active element is not an HTMLElement', async () => {
-      const plugin = createPlugin();
-      // Spy on activeDocument.activeElement to return null (covers false branch of instanceof HTMLElement)
-      vi.spyOn(activeDocument, 'activeElement', 'get').mockReturnValue(null);
-      const callback = vi.fn(async () => undefined);
-      await asPrivate(plugin).executeKeepingFocus(callback);
-      expect(callback).toHaveBeenCalled();
     });
   });
 
-  describe('getActiveView lambda (passed to RefreshActiveViewCommandHandler)', () => {
-    it('should call workspace.getActiveViewOfType when invoked', () => {
-      const plugin = createPlugin();
-      expect(plugin).toBeInstanceOf(Plugin);
-      const getActiveView = hoisted.capturedRefreshActiveViewGetActiveView[0];
-      expect(getActiveView).toBeDefined();
-      const mockView = {} as ViewOriginal;
-      hoisted.mockGetActiveViewOfType.mockReturnValue(mockView);
-      const result = getActiveView?.();
-      expect(result).toBe(mockView);
-      expect(hoisted.mockGetActiveViewOfType).toHaveBeenCalled();
-    });
-  });
-
-  describe('register cleanup callback (buttonEl.remove)', () => {
-    it('should remove the button element when cleanup is called', async () => {
-      const plugin = createPlugin();
-      await plugin.onload();
-      const addAction = vi.fn(() => {
-        const btn = document.createElement('button');
-        document.body.appendChild(btn);
-        return btn;
-      });
-      const itemView = {
-        addAction,
-        containerEl: { scrollLeft: 0, scrollTop: 0 },
-        getViewType: vi.fn(() => 'test'),
-        leaf: {
-          isDeferred: false,
-          isVisible: vi.fn(() => false),
-          loadIfDeferred: vi.fn(async () => undefined),
-          rebuildView: vi.fn(async () => undefined)
-        }
-      } as unknown as ViewOriginal;
-      hoisted.mockGetActiveViewOfType.mockReturnValue(itemView);
-
-      hoisted.capturedRegisterCallbacks.length = 0;
-      asPrivate(plugin).handleLayoutChange();
-
-      const cleanup = hoisted.capturedRegisterCallbacks[0];
-      expect(cleanup).toBeDefined();
-      // Calling the cleanup should invoke buttonEl.remove()
-      cleanup?.();
-    });
-  });
-
-  describe('refreshViews with FileView condition', () => {
-    it('should invoke lambda that checks FileView.file match in handleModify', async () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.shouldAutoRefreshOnFileChange = true;
-      hoisted.mockIsFile.mockReturnValue(true);
-      hoisted.mockSettings.isViewTypeIncluded.mockReturnValue(true);
-
-      // Use the same reference for both the view's file and the modified file
-      const sharedFile = { path: 'test.md' } as TAbstractFile;
-      const loadIfDeferred = vi.fn(async () => undefined);
-      const rebuildView = vi.fn(async () => undefined);
-      const leaf = {
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred,
-        rebuildView,
-        view: null as unknown
-      };
-      const fileView = new FileViewClass() as unknown as Record<string, unknown>;
-      fileView['file'] = sharedFile;
-      fileView['containerEl'] = { scrollLeft: 0, scrollTop: 0 };
-      fileView['getViewType'] = vi.fn(() => 'test');
-      fileView['leaf'] = leaf;
-      leaf.view = fileView;
-
-      hoisted.mockIterateAllLeaves.mockImplementation((cb: (leaf: unknown) => void) => {
-        cb(leaf);
-      });
-
-      asPrivate(plugin).handleModify(sharedFile);
-      // Flush microtasks so the async chain in invokeAsyncSafely completes
-      await noopAsync();
-      await noopAsync();
-      expect(rebuildView).toHaveBeenCalled();
+  describe('registerAutoRefreshTimer', () => {
+    it('should not set an interval in Off mode', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.Off;
+      vi.useFakeTimers();
+      const setIntervalSpy = vi.spyOn(window, 'setInterval');
+      testable(plugin).registerAutoRefreshTimer();
+      expect(setIntervalSpy).not.toHaveBeenCalled();
     });
 
-    it('should invoke lambda that checks isMatchingAutoRefreshMode in timer interval', async () => {
-      const plugin = createPlugin();
-      hoisted.mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
-      hoisted.mockSettings.autoRefreshIntervalInSeconds = 1;
-      hoisted.mockSettings.isViewTypeIncluded.mockReturnValue(true);
+    it('should set an interval when not in Off mode', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
+      mockSettings.autoRefreshIntervalInSeconds = 5;
+      vi.useFakeTimers();
+      const setIntervalSpy = vi.spyOn(window, 'setInterval');
+      testable(plugin).registerAutoRefreshTimer();
+      expect(setIntervalSpy).toHaveBeenCalled();
+    });
 
-      const loadIfDeferred = vi.fn(async () => undefined);
-      const rebuildView = vi.fn(async () => undefined);
-      const leaf = {
-        isDeferred: false,
-        isVisible: vi.fn(() => false),
-        loadIfDeferred,
-        rebuildView,
-        view: null as unknown
-      };
-      const genericView = {
-        containerEl: { scrollLeft: 0, scrollTop: 0 },
-        getViewType: vi.fn(() => 'test'),
-        leaf
-      } as unknown;
-      leaf.view = genericView;
+    it('should clear the previous interval when called again', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
+      mockSettings.autoRefreshIntervalInSeconds = 5;
+      vi.useFakeTimers();
+      const clearIntervalSpy = vi.spyOn(window, 'clearInterval');
+      testable(plugin).registerAutoRefreshTimer();
+      testable(plugin).registerAutoRefreshTimer();
+      expect(clearIntervalSpy).toHaveBeenCalled();
+    });
 
-      hoisted.mockIterateAllLeaves.mockImplementation((cb: (leaf: unknown) => void) => {
+    it('should refresh matching views when the interval fires', async () => {
+      const plugin = await createLoadedPlugin();
+      mockSettings.autoRefreshMode = AutoRefreshMode.AllOpenViews;
+      mockSettings.autoRefreshIntervalInSeconds = 1;
+      const rebuildView = vi.fn(asyncNoop);
+      const leaf = createLeafStub({ rebuildView });
+      leaf.view = createGenericView({ viewType: 'test' }, leaf);
+      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
         cb(leaf);
       });
 
       vi.useFakeTimers();
-      asPrivate(plugin).registerAutoRefreshTimer();
+      testable(plugin).registerAutoRefreshTimer();
       await vi.advanceTimersByTimeAsync(1000);
       expect(rebuildView).toHaveBeenCalled();
     });
   });
 
-  describe('executeKeepingFocus non-HTMLElement branch', () => {
-    it('should not throw when activeElement is the document body', async () => {
-      const plugin = createPlugin();
-      // Blur everything so activeDocument.activeElement is body (not HTMLElement trigger)
-      // The body is an HTMLElement, so test with SVGElement-like scenario
-      // By checking the branch is covered via the SVGElement path
-      const callback = vi.fn(async () => undefined);
-      await asPrivate(plugin).executeKeepingFocus(callback);
+  describe('executeKeepingFocus', () => {
+    it('should run the callback and restore focus to the active element', async () => {
+      const plugin = await createLoadedPlugin();
+      const button = activeDocument.createElement('button');
+      activeDocument.body.appendChild(button);
+      button.focus();
+      const focusSpy = vi.spyOn(button, 'focus');
+      const callback = vi.fn(asyncNoop);
+
+      await testable(plugin).executeKeepingFocus(callback);
+
+      expect(callback).toHaveBeenCalled();
+      expect(focusSpy).toHaveBeenCalled();
+      button.remove();
+    });
+
+    it('should restore focus even when the callback throws', async () => {
+      const plugin = await createLoadedPlugin();
+      const button = activeDocument.createElement('button');
+      activeDocument.body.appendChild(button);
+      button.focus();
+      const focusSpy = vi.spyOn(button, 'focus');
+      const callback = vi.fn((): Promise<void> => Promise.reject(new Error('boom')));
+
+      await expect(testable(plugin).executeKeepingFocus(callback)).rejects.toThrow('boom');
+      expect(focusSpy).toHaveBeenCalled();
+      button.remove();
+    });
+
+    it('should not focus when the active element is not an HTMLElement', async () => {
+      const plugin = await createLoadedPlugin();
+      vi.spyOn(activeDocument, 'activeElement', 'get').mockReturnValue(null);
+      const callback = vi.fn(asyncNoop);
+
+      await testable(plugin).executeKeepingFocus(callback);
       expect(callback).toHaveBeenCalled();
     });
   });
 });
-/* eslint-enable @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-empty-function, @typescript-eslint/no-extraneous-class, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-useless-constructor, @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/require-await, func-style, no-restricted-syntax, obsidianmd/prefer-active-doc -- End of test file. */
+
+// --- Helpers ---
+
+interface CodeMirrorStub {
+  dispatch(): void;
+  scrollDOM: ScrollDomStub;
+  state: EditorStateStub;
+}
+
+interface DocStub {
+  length: number;
+}
+
+interface EditorStateStub {
+  doc: DocStub;
+  selection: object;
+}
+
+interface FileViewAugment {
+  containerEl: HTMLElement;
+  file: unknown;
+  getViewType(): string;
+  leaf: WorkspaceLeafOriginal;
+}
+
+interface FileViewSpec {
+  file: unknown;
+  viewType: string;
+}
+
+interface GenericViewSpec extends ViewStubMembers {
+  viewType?: string;
+}
+
+interface ItemViewAugment {
+  addAction: AddActionFn;
+  containerEl: HTMLElement;
+  getViewType(): string;
+  leaf: WorkspaceLeafOriginal;
+}
+
+interface ItemViewSpec {
+  addAction: AddActionFn;
+  leaf?: WorkspaceLeafOriginal;
+}
+
+interface MarkdownEditorStub {
+  cm: CodeMirrorStub;
+}
+
+interface MarkdownViewAugment {
+  containerEl: HTMLElement;
+  dirty: boolean;
+  editor: MarkdownEditorStub;
+  file: unknown;
+  leaf: WorkspaceLeafOriginal;
+  mode: string;
+  previewMode: PreviewModeStub;
+}
+
+interface MarkdownViewSpec {
+  dispatch?(): void;
+  file?: unknown;
+  mode: string;
+  rerender?(): void;
+  viewType?: string;
+}
+
+interface PreviewModeStub {
+  rerender(): void;
+}
+
+interface ScrollDomStub {
+  scrollTop: number;
+}
+
+interface TextFileViewAugment {
+  containerEl: HTMLElement;
+  dirty: boolean;
+  leaf: WorkspaceLeafOriginal;
+  save(): Promise<void>;
+}
+
+interface TextFileViewSpec {
+  dirty: boolean;
+  save(): Promise<void>;
+}
+
+function asyncNoop(): Promise<void> {
+  return noopAsync();
+}
+
+function createFileView(spec: FileViewSpec, leaf: WorkspaceLeafOriginal): ViewOriginal {
+  const view = new FileViewClass(realLeaf());
+  const augmented = castTo<FileViewAugment>(view);
+  augmented.file = spec.file;
+  augmented.getViewType = (): string => spec.viewType;
+  augmented.containerEl = createScrollEl();
+  augmented.leaf = leaf;
+  return castTo<ViewOriginal>(view);
+}
+
+function createGenericView(members: GenericViewSpec, leaf: WorkspaceLeafOriginal): ViewOriginal {
+  return strictProxy<ViewOriginal>({
+    containerEl: members.containerEl ?? createScrollEl(),
+    getViewType: members.getViewType ?? ((): string => members.viewType ?? 'generic'),
+    leaf
+  });
+}
+
+function createItemView(spec: ItemViewSpec): ViewOriginal {
+  const leaf = spec.leaf ?? createLeafStub({});
+  const view = new ItemViewClass(realLeaf());
+  const augmented = castTo<ItemViewAugment>(view);
+  augmented.addAction = spec.addAction;
+  augmented.containerEl = createScrollEl();
+  augmented.getViewType = (): string => 'item';
+  augmented.leaf = leaf;
+  return castTo<ViewOriginal>(view);
+}
+
+function createLeafStub(spec: LeafStubSpec): WorkspaceLeafOriginal {
+  return strictProxy<WorkspaceLeafOriginal>({
+    isDeferred: spec.isDeferred ?? false,
+    isVisible: (): boolean => spec.isVisible ?? false,
+    loadIfDeferred: spec.loadIfDeferred ?? asyncNoop,
+    rebuildView: spec.rebuildView ?? asyncNoop,
+    view: spec.view ?? castTo<ViewOriginal>({})
+  });
+}
+
+async function createLoadedPlugin(): Promise<Plugin> {
+  const plugin = new Plugin(app, manifest);
+  await plugin.onload();
+  loadedPlugin = plugin;
+  return plugin;
+}
+
+function createMarkdownView(spec: MarkdownViewSpec, leaf: WorkspaceLeafOriginal): ViewOriginal {
+  const view = new MarkdownViewClass(realLeaf());
+  const augmented = castTo<MarkdownViewAugment>(view);
+  augmented.dirty = false;
+  augmented.mode = spec.mode;
+  augmented.file = spec.file ?? null;
+  augmented.containerEl = createScrollEl();
+  augmented.leaf = leaf;
+  augmented.previewMode = { rerender: spec.rerender ?? vi.fn() };
+  augmented.editor = {
+    cm: {
+      dispatch: spec.dispatch ?? vi.fn(),
+      scrollDOM: { scrollTop: 0 },
+      state: { doc: { length: 10 }, selection: {} }
+    }
+  };
+  return castTo<ViewOriginal>(view);
+}
+
+function createScrollEl(): HTMLElement {
+  return castTo<HTMLElement>({ scrollLeft: 0, scrollTop: 0 });
+}
+
+function createTextFileView(spec: TextFileViewSpec, leaf: WorkspaceLeafOriginal): ViewOriginal {
+  const view = new TextFileViewClass(realLeaf());
+  const augmented = castTo<TextFileViewAugment>(view);
+  augmented.dirty = spec.dirty;
+  augmented.save = spec.save;
+  augmented.containerEl = createScrollEl();
+  augmented.leaf = leaf;
+  return castTo<ViewOriginal>(view);
+}
+
+function realLeaf(): WorkspaceLeaf {
+  return WorkspaceLeaf.create2__(appMock);
+}
+
+function resetSettings(): void {
+  const defaults = new PluginSettings();
+  mockSettings.autoRefreshIntervalInSeconds = defaults.autoRefreshIntervalInSeconds;
+  mockSettings.autoRefreshMode = defaults.autoRefreshMode;
+  mockSettings.excludeViewTypesForAutoRefresh = [];
+  mockSettings.includeViewTypesForAutoRefresh = [];
+  mockSettings.shouldAutoRefreshMarkdownViewInSourceMode = defaults.shouldAutoRefreshMarkdownViewInSourceMode;
+  mockSettings.shouldAutoRefreshOnFileChange = defaults.shouldAutoRefreshOnFileChange;
+  mockSettings.shouldLoadDeferredViewsOnAutoRefresh = defaults.shouldLoadDeferredViewsOnAutoRefresh;
+  mockSettings.shouldLoadDeferredViewsOnStart = defaults.shouldLoadDeferredViewsOnStart;
+  mockSettings.shouldUseQuickMarkdownViewRefresh = defaults.shouldUseQuickMarkdownViewRefresh;
+}
+
+function testable(plugin: Plugin): Testable {
+  return castTo<Testable>(plugin);
+}

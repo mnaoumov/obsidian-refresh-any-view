@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-extraneous-class, @typescript-eslint/no-useless-constructor, @typescript-eslint/require-await -- Test mocks require empty constructors and async stubs. */
+import { noopAsync } from 'obsidian-dev-utils/function';
 import {
   describe,
   expect,
@@ -8,38 +8,24 @@ import {
 
 import { RefreshAllVisibleViewsCommandHandler } from './refresh-all-visible-views-command-handler.ts';
 
-vi.mock('obsidian-dev-utils/obsidian/command-handlers/global-command-handler', () => ({
-  GlobalCommandHandler: class {
-    public constructor(_params: unknown) {
-      // Base no-op
-    }
-  }
-}));
-
-interface CommandHandlerPrivate {
-  execute(): Promise<void>;
-}
-
-function asPrivate(handler: RefreshAllVisibleViewsCommandHandler): CommandHandlerPrivate {
-  // eslint-disable-next-line no-restricted-syntax -- Accessing protected methods for testing requires double assertion.
-  return handler as unknown as CommandHandlerPrivate;
-}
-
 describe('RefreshAllVisibleViewsCommandHandler', () => {
-  it('should create an instance', () => {
+  it('should build a command with the expected id, name and icon', () => {
     const handler = new RefreshAllVisibleViewsCommandHandler({
-      refreshAllVisibleViews: async () => undefined
+      refreshAllVisibleViews: noopAsync
     });
-    expect(handler).toBeInstanceOf(RefreshAllVisibleViewsCommandHandler);
+    const command = handler.buildCommand();
+    expect(command.id).toBe('refresh-all-visible-views');
+    expect(command.name).toBe('Refresh all visible views');
+    expect(command.icon).toBe('refresh-ccw');
   });
 
-  describe('execute', () => {
+  describe('execute (via checkCallback)', () => {
     it('should call refreshAllVisibleViews', async () => {
-      const refreshAllVisibleViews = vi.fn().mockResolvedValue(undefined);
+      const refreshAllVisibleViews = vi.fn((): Promise<void> => noopAsync());
       const handler = new RefreshAllVisibleViewsCommandHandler({ refreshAllVisibleViews });
-      await asPrivate(handler).execute();
+      expect(handler.buildCommand().checkCallback?.(false)).toBe(true);
+      await noopAsync();
       expect(refreshAllVisibleViews).toHaveBeenCalled();
     });
   });
 });
-/* eslint-enable @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-extraneous-class, @typescript-eslint/no-useless-constructor, @typescript-eslint/require-await -- End of test file. */
