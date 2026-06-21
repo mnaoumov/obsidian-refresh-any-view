@@ -1,8 +1,6 @@
-import type {
-  App,
-  PluginManifest,
-  TAbstractFile
-} from 'obsidian';
+import type { TAbstractFile } from 'obsidian';
+
+import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
 import {
   FileView,
@@ -40,11 +38,10 @@ type OnOpenTabHeaderMenuFn = WorkspaceLeaf['onOpenTabHeaderMenu'];
 export class Plugin extends PluginBase {
   private autoRefreshIntervalId: null | number = null;
   private readonly itemViews = new WeakSet<ItemView>();
-  private readonly monkeyAroundComponent: MonkeyAroundComponent;
-  private readonly pluginSettingsComponent: PluginSettingsComponent;
+  private monkeyAroundComponent!: MonkeyAroundComponent;
+  private pluginSettingsComponent!: PluginSettingsComponent;
 
-  public constructor(app: App, manifest: PluginManifest) {
-    super(app, manifest);
+  protected override onloadImpl(): void {
     this.pluginSettingsComponent = this.addChild(
       new PluginSettingsComponent({
         dataHandler: new PluginDataHandler(this),
@@ -60,10 +57,10 @@ export class Plugin extends PluginBase {
         })
       })
     );
-    const menuEventRegistrarComponent = this.addChild(new MenuEventRegistrarComponent(app));
+    const menuEventRegistrarComponent = this.addChild(new MenuEventRegistrarComponent(this.app));
     this.addChild(
       new CommandHandlerComponent({
-        activeFileProvider: new AppActiveFileProvider(app),
+        activeFileProvider: new AppActiveFileProvider(this.app),
         commandHandlers: [
           new RefreshActiveViewCommandHandler({
             getActiveView: (): null | View => this.app.workspace.getActiveViewOfType(View),
@@ -78,15 +75,12 @@ export class Plugin extends PluginBase {
         ],
         commandRegistrar: new PluginCommandRegistrar(this),
         menuEventRegistrar: menuEventRegistrarComponent,
-        pluginName: manifest.name
+        pluginName: this.manifest.name
       })
     );
     this.monkeyAroundComponent = this.addChild(new MonkeyAroundComponent());
-    this.addChild(new CallbackLayoutReadyComponent(app, () => this.onLayoutReady()));
-  }
+    this.addChild(new CallbackLayoutReadyComponent(this.app, () => this.onLayoutReady()));
 
-  public override async onload(): Promise<void> {
-    await super.onload();
     this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
   }
 
@@ -286,11 +280,11 @@ export class Plugin extends PluginBase {
       })
     );
 
-    const that = this;
+    const thisWrapper = ValueWrapper.of(this);
     this.monkeyAroundComponent.registerPatch(WorkspaceLeaf.prototype, {
       onOpenTabHeaderMenu: (next: OnOpenTabHeaderMenuFn): OnOpenTabHeaderMenuFn => {
         return function onOpenTabHeaderMenuPatched(this: WorkspaceLeaf, evt: MouseEvent, parentEl: HTMLElement): void {
-          that.onOpenTabHeaderMenu(next, this, evt, parentEl);
+          thisWrapper.value.onOpenTabHeaderMenu(next, this, evt, parentEl);
         };
       }
     });

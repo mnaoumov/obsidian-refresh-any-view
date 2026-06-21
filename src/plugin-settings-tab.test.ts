@@ -120,7 +120,7 @@ describe('PluginSettingsTab', () => {
     capturedBindOptions.length = 0;
     const tab = createSettingsTab();
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing display() which is deprecated but still the mechanism used by PluginSettingsTabBase.
-    tab.display();
+    tab.displayLegacy();
     expect(tab.containerEl.children.length).toBeGreaterThan(0);
     // Invoke the dropdown converters after display() so autoRefreshIntervalSetting is initialized
     for (const opts of capturedBindOptions) {
@@ -135,7 +135,7 @@ describe('PluginSettingsTab', () => {
     capturedBindOptions.length = 0;
     const tab = createSettingsTab();
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing display() behavior with different setting values.
-    tab.display();
+    tab.displayLegacy();
     expect(tab.containerEl.children.length).toBeGreaterThan(0);
     for (const opts of capturedBindOptions) {
       opts.onChanged?.(AutoRefreshMode.Off);
