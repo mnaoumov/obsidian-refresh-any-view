@@ -43,84 +43,6 @@ export class Plugin extends PluginBase {
     pluginEventSource: new PluginEventSourceImpl(this)
   });
 
-  public async refreshAllOpenViews(): Promise<void> {
-    await this.refreshViews(() => true);
-  }
-
-  public async refreshAllVisibleViews(): Promise<void> {
-    await this.refreshViews(this.isVisibleView.bind(this));
-  }
-
-  public async refreshView(view: View): Promise<void> {
-    const leaf = view.leaf;
-
-    const viewScrollTop = view.containerEl.scrollTop;
-    const viewScrollLeft = view.containerEl.scrollLeft;
-
-    await leaf.loadIfDeferred();
-
-    if (view instanceof TextFileView && view.dirty) {
-      await view.save();
-    }
-
-    if (view instanceof MarkdownView) {
-      if (view.file) {
-        await getCacheSafe(this.app, view.file);
-      }
-
-      if (view.getMode() === 'preview') {
-        if (this.pluginSettingsComponent.settings.shouldUseQuickMarkdownViewRefresh) {
-          view.previewMode.rerender(true);
-        } else {
-          await leaf.rebuildView();
-        }
-
-        restoreScrollPosition();
-
-        return;
-      }
-
-      let cm = view.editor.cm;
-      const scrollTop = cm.scrollDOM.scrollTop;
-      const text = cm.state.doc;
-      const selection = cm.state.selection;
-      if (this.pluginSettingsComponent.settings.shouldUseQuickMarkdownViewRefresh) {
-        cm.dispatch({
-          changes: {
-            from: 0,
-            to: text.length
-          }
-        });
-        cm.dispatch({
-          changes: {
-            from: 0,
-            insert: text,
-            to: 0
-          },
-          selection
-        });
-      } else {
-        await leaf.rebuildView();
-        // eslint-disable-next-line require-atomic-updates -- Ignore possible race condition.
-        cm = view.editor.cm;
-      }
-      window.requestAnimationFrame(() => {
-        cm.scrollDOM.scrollTop = scrollTop;
-      });
-      return;
-    }
-
-    await leaf.rebuildView();
-    restoreScrollPosition();
-
-    function restoreScrollPosition(): void {
-      window.requestAnimationFrame(() => {
-        view.containerEl.scrollTop = viewScrollTop;
-        view.containerEl.scrollLeft = viewScrollLeft;
-      });
-    }
-  }
-
   protected override onloadImpl(): void {
     this.addChild(this.pluginSettingsComponent);
     this.addChild(
@@ -308,6 +230,84 @@ export class Plugin extends PluginBase {
         invokeAsyncSafely(() => this.copyViewTypeToClipboard(viewType));
       });
     });
+  }
+
+  private async refreshAllOpenViews(): Promise<void> {
+    await this.refreshViews(() => true);
+  }
+
+  private async refreshAllVisibleViews(): Promise<void> {
+    await this.refreshViews(this.isVisibleView.bind(this));
+  }
+
+  private async refreshView(view: View): Promise<void> {
+    const leaf = view.leaf;
+
+    const viewScrollTop = view.containerEl.scrollTop;
+    const viewScrollLeft = view.containerEl.scrollLeft;
+
+    await leaf.loadIfDeferred();
+
+    if (view instanceof TextFileView && view.dirty) {
+      await view.save();
+    }
+
+    if (view instanceof MarkdownView) {
+      if (view.file) {
+        await getCacheSafe(this.app, view.file);
+      }
+
+      if (view.getMode() === 'preview') {
+        if (this.pluginSettingsComponent.settings.shouldUseQuickMarkdownViewRefresh) {
+          view.previewMode.rerender(true);
+        } else {
+          await leaf.rebuildView();
+        }
+
+        restoreScrollPosition();
+
+        return;
+      }
+
+      let cm = view.editor.cm;
+      const scrollTop = cm.scrollDOM.scrollTop;
+      const text = cm.state.doc;
+      const selection = cm.state.selection;
+      if (this.pluginSettingsComponent.settings.shouldUseQuickMarkdownViewRefresh) {
+        cm.dispatch({
+          changes: {
+            from: 0,
+            to: text.length
+          }
+        });
+        cm.dispatch({
+          changes: {
+            from: 0,
+            insert: text,
+            to: 0
+          },
+          selection
+        });
+      } else {
+        await leaf.rebuildView();
+        // eslint-disable-next-line require-atomic-updates -- Ignore possible race condition.
+        cm = view.editor.cm;
+      }
+      window.requestAnimationFrame(() => {
+        cm.scrollDOM.scrollTop = scrollTop;
+      });
+      return;
+    }
+
+    await leaf.rebuildView();
+    restoreScrollPosition();
+
+    function restoreScrollPosition(): void {
+      window.requestAnimationFrame(() => {
+        view.containerEl.scrollTop = viewScrollTop;
+        view.containerEl.scrollLeft = viewScrollLeft;
+      });
+    }
   }
 
   private async refreshViews(condition: (view: View) => boolean): Promise<void> {
