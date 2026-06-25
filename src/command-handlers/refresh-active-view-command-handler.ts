@@ -1,15 +1,13 @@
-import type { View } from 'obsidian';
-
 import { GlobalCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/global-command-handler';
 
+import type { RefreshAnyViewComponent } from '../refresh-any-view-component.ts';
+
 interface RefreshActiveViewCommandHandlerConstructorParams {
-  getActiveView(this: void): null | View;
-  refreshView(this: void, view: View): Promise<void>;
+  readonly refreshAnyViewComponent: RefreshAnyViewComponent;
 }
 
 export class RefreshActiveViewCommandHandler extends GlobalCommandHandler {
-  private readonly getActiveView: () => null | View;
-  private readonly refreshView: (view: View) => Promise<void>;
+  private readonly refreshAnyViewComponent: RefreshAnyViewComponent;
 
   public constructor(params: RefreshActiveViewCommandHandlerConstructorParams) {
     super({
@@ -17,18 +15,17 @@ export class RefreshActiveViewCommandHandler extends GlobalCommandHandler {
       id: 'refresh-active-view',
       name: 'Refresh active view'
     });
-    this.getActiveView = params.getActiveView;
-    this.refreshView = params.refreshView;
+    this.refreshAnyViewComponent = params.refreshAnyViewComponent;
   }
 
   protected override canExecute(): boolean {
-    return this.getActiveView() !== null;
+    return this.refreshAnyViewComponent.getActiveView() !== null;
   }
 
   protected override async execute(): Promise<void> {
-    const view = this.getActiveView();
+    const view = this.refreshAnyViewComponent.getActiveView();
     if (view) {
-      await this.refreshView(view);
+      await this.refreshAnyViewComponent.refreshView(view);
     }
   }
 }

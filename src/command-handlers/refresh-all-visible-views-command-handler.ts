@@ -1,11 +1,13 @@
 import { GlobalCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/global-command-handler';
 
+import type { RefreshAnyViewComponent } from '../refresh-any-view-component.ts';
+
 interface RefreshAllVisibleViewsCommandHandlerConstructorParams {
-  refreshAllVisibleViews(this: void): Promise<void>;
+  readonly refreshAnyViewComponent: RefreshAnyViewComponent;
 }
 
 export class RefreshAllVisibleViewsCommandHandler extends GlobalCommandHandler {
-  private readonly refreshAllVisibleViews: () => Promise<void>;
+  private readonly refreshAnyViewComponent: RefreshAnyViewComponent;
 
   public constructor(params: RefreshAllVisibleViewsCommandHandlerConstructorParams) {
     super({
@@ -13,10 +15,10 @@ export class RefreshAllVisibleViewsCommandHandler extends GlobalCommandHandler {
       id: 'refresh-all-visible-views',
       name: 'Refresh all visible views'
     });
-    this.refreshAllVisibleViews = params.refreshAllVisibleViews;
+    this.refreshAnyViewComponent = params.refreshAnyViewComponent;
   }
 
   protected override async execute(): Promise<void> {
-    await this.refreshAllVisibleViews();
+    await this.refreshAnyViewComponent.refreshAllVisibleViews();
   }
 }
