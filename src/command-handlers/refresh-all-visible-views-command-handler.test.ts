@@ -1,4 +1,6 @@
+import { waitForAllAsyncOperations } from 'obsidian-dev-utils/async';
 import { noopAsync } from 'obsidian-dev-utils/function';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
   describe,
   expect,
@@ -6,12 +8,16 @@ import {
   vi
 } from 'vitest';
 
+import type { RefreshAnyViewComponent } from '../refresh-any-view-component.ts';
+
 import { RefreshAllVisibleViewsCommandHandler } from './refresh-all-visible-views-command-handler.ts';
 
 describe('RefreshAllVisibleViewsCommandHandler', () => {
   it('should build a command with the expected id, name and icon', () => {
     const handler = new RefreshAllVisibleViewsCommandHandler({
-      refreshAllVisibleViews: noopAsync
+      refreshAnyViewComponent: strictProxy<RefreshAnyViewComponent>({
+        refreshAllVisibleViews: (): Promise<void> => noopAsync()
+      })
     });
     const command = handler.buildCommand();
     expect(command.id).toBe('refresh-all-visible-views');
@@ -22,9 +28,11 @@ describe('RefreshAllVisibleViewsCommandHandler', () => {
   describe('execute (via checkCallback)', () => {
     it('should call refreshAllVisibleViews', async () => {
       const refreshAllVisibleViews = vi.fn((): Promise<void> => noopAsync());
-      const handler = new RefreshAllVisibleViewsCommandHandler({ refreshAllVisibleViews });
+      const handler = new RefreshAllVisibleViewsCommandHandler({
+        refreshAnyViewComponent: strictProxy<RefreshAnyViewComponent>({ refreshAllVisibleViews })
+      });
       expect(handler.buildCommand().checkCallback?.(false)).toBe(true);
-      await noopAsync();
+      await waitForAllAsyncOperations();
       expect(refreshAllVisibleViews).toHaveBeenCalled();
     });
   });
