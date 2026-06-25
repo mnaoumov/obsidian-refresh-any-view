@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.5.22
+
+- refactor: new template
+
 ## 3.5.21
 
 - chore: update libs
