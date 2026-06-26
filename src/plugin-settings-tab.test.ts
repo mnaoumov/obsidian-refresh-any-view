@@ -38,7 +38,7 @@ beforeEach(() => {
   // That the tab wires each component to the correct setting key, so we stub its return value
   // (an allowed test double): the real test-mocks components are strict proxies that throw on the
   // Duck-typing probes inside the real `bind`.
-  vi.spyOn(PluginSettingsTabBase.prototype, 'bind').mockImplementation((valueComponent) => valueComponent);
+  vi.spyOn(PluginSettingsTabBase.prototype, 'bind').mockImplementation((params) => params.valueComponent);
 });
 
 describe('PluginSettingsTab', () => {
@@ -57,7 +57,7 @@ describe('PluginSettingsTab', () => {
     const tab = createTab();
 
     tab.displayLegacy();
-    const boundKeys = vi.mocked(PluginSettingsTabBase.prototype.bind).mock.calls.map((call) => call[1]);
+    const boundKeys = vi.mocked(PluginSettingsTabBase.prototype.bind).mock.calls.map((call) => call[0].propertyName);
     expect(boundKeys).toContain('shouldAutoRefreshOnFileChange');
     expect(boundKeys).toContain('autoRefreshMode');
     expect(boundKeys).toContain('autoRefreshIntervalInSeconds');
@@ -71,8 +71,8 @@ describe('PluginSettingsTab', () => {
     tab.displayLegacy();
 
     const optionsList = vi.mocked(PluginSettingsTabBase.prototype.bind).mock.calls
-      .map((call) => castTo<DropdownBindOptions | undefined>(call[2]))
-      .filter((options): options is DropdownBindOptions => options !== undefined);
+      .map((call) => castTo<Partial<DropdownBindOptions>>(call[0]))
+      .filter((options): options is DropdownBindOptions => typeof options.componentToPluginSettingsValueConverter === 'function');
 
     expect(optionsList.length).toBeGreaterThan(0);
 

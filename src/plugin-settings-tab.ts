@@ -22,7 +22,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         f.appendText('\u26A0\uFE0F This may cause flickering or losing some UI state such as the cursor position.');
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldAutoRefreshOnFileChange');
+        this.bind({ propertyName: 'shouldAutoRefreshOnFileChange', valueComponent: toggle });
       });
 
     new SettingEx(this.containerEl)
@@ -41,12 +41,14 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           [AutoRefreshMode.AllOpenViews]: 'All open views'
           /* eslint-enable perfectionist/sort-objects -- Need to keep enum order. */
         });
-        this.bind(dropdown, 'autoRefreshMode', {
+        this.bind({
           componentToPluginSettingsValueConverter: (value: string) => getEnumValue(AutoRefreshMode, value),
           onChanged(newValue: AutoRefreshMode) {
             updateAutoRefreshIntervalSettingVisibility(newValue);
           },
-          pluginSettingsToComponentValueConverter: (value: AutoRefreshMode) => getEnumKey(AutoRefreshMode, value)
+          pluginSettingsToComponentValueConverter: (value: AutoRefreshMode) => getEnumKey(AutoRefreshMode, value),
+          propertyName: 'autoRefreshMode',
+          valueComponent: dropdown
         });
       });
 
@@ -54,7 +56,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       .setName('Auto refresh interval (seconds)')
       .setDesc('Interval in seconds to auto refresh the view(s).')
       .addNumber((number) => {
-        this.bind(number, 'autoRefreshIntervalInSeconds')
+        this.bind({ propertyName: 'autoRefreshIntervalInSeconds', valueComponent: number })
           .setMin(1);
       });
 
@@ -66,7 +68,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         f.appendText('Whether to refresh the markdown view in Source / Live Preview mode, if auto refresh is enabled.');
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldAutoRefreshMarkdownViewInSourceMode');
+        this.bind({ propertyName: 'shouldAutoRefreshMarkdownViewInSourceMode', valueComponent: toggle });
       });
 
     new SettingEx(this.containerEl)
@@ -81,21 +83,21 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         );
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldUseQuickMarkdownViewRefresh');
+        this.bind({ propertyName: 'shouldUseQuickMarkdownViewRefresh', valueComponent: toggle });
       });
 
     new SettingEx(this.containerEl)
       .setName('Should load deferred views on auto refresh')
       .setDesc('Whether to load deferred views on auto refresh')
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldLoadDeferredViewsOnAutoRefresh');
+        this.bind({ propertyName: 'shouldLoadDeferredViewsOnAutoRefresh', valueComponent: toggle });
       });
 
     new SettingEx(this.containerEl)
       .setName('Should load deferred views on start')
       .setDesc('Whether to load deferred views on start')
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldLoadDeferredViewsOnStart');
+        this.bind({ propertyName: 'shouldLoadDeferredViewsOnStart', valueComponent: toggle });
       });
 
     new SettingEx(this.containerEl)
@@ -112,7 +114,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         f.appendText('.');
       }))
       .addMultipleText((text) => {
-        this.bind(text, 'includeViewTypesForAutoRefresh');
+        this.bind({ propertyName: 'includeViewTypesForAutoRefresh', valueComponent: text });
         // eslint-disable-next-line obsidianmd/ui/sentence-case -- we need `markdown` lowercase as type name.
         text.setPlaceholder('markdown\ncanvas');
       });
@@ -131,7 +133,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         f.appendText('.');
       }))
       .addMultipleText((text) => {
-        this.bind(text, 'excludeViewTypesForAutoRefresh');
+        this.bind({ propertyName: 'excludeViewTypesForAutoRefresh', valueComponent: text });
         // eslint-disable-next-line obsidianmd/ui/sentence-case -- we need `file-explorer` lowercase as type name
         text.setPlaceholder('file-explorer\nsearch');
       });
