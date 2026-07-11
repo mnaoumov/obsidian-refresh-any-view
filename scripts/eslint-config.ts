@@ -13,6 +13,11 @@ export const configs: Linter.Config[] = defineEslintConfigs({
             brands: [
               'Source',
               'Live Preview'
+            ],
+            // Exempt placeholders that list newline-separated lowercase Obsidian view-type
+            // Identifiers (`markdown\ncanvas`, `file-explorer\nsearch`) — they must stay lowercase.
+            ignoreRegex: [
+              '^[a-z][a-z-]*(?:\\n[a-z][a-z-]*)+$'
             ]
           }
         ]

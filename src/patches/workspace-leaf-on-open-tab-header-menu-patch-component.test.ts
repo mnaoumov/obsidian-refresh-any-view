@@ -112,7 +112,7 @@ function openTabHeaderMenu(view: Partial<ViewOriginal>): WorkspaceLeaf {
   const leaf = WorkspaceLeaf.create2__(appMock);
   leaf.view = castTo<typeof leaf.view>(view);
   const evt = new MouseEvent('click');
-  const parentEl = activeDocument.createElement('div');
+  const parentEl = activeWindow.createDiv();
   castTo<WorkspaceLeafOriginal>(leaf).onOpenTabHeaderMenu(evt, parentEl);
   return leaf;
 }

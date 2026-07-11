@@ -115,7 +115,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       }))
       .addMultipleText((text) => {
         this.bind({ propertyName: 'includeViewTypesForAutoRefresh', valueComponent: text });
-        // eslint-disable-next-line obsidianmd/ui/sentence-case -- we need `markdown` lowercase as type name.
         text.setPlaceholder('markdown\ncanvas');
       });
 
@@ -134,7 +133,6 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       }))
       .addMultipleText((text) => {
         this.bind({ propertyName: 'excludeViewTypesForAutoRefresh', valueComponent: text });
-        // eslint-disable-next-line obsidianmd/ui/sentence-case -- we need `file-explorer` lowercase as type name
         text.setPlaceholder('file-explorer\nsearch');
       });
 

@@ -317,7 +317,7 @@ describe('RefreshAnyViewComponent', () => {
 
     it('should add a refresh action for a new item view', () => {
       const component = createLoadedComponent();
-      const addAction = vi.fn((): HTMLElement => activeDocument.createElement('button'));
+      const addAction = vi.fn((): HTMLElement => activeWindow.createEl('button'));
       const itemView = createItemView({ addAction });
       getActiveViewOfType.mockReturnValue(itemView);
 
@@ -327,7 +327,7 @@ describe('RefreshAnyViewComponent', () => {
 
     it('should not add a duplicate action for the same item view', () => {
       const component = createLoadedComponent();
-      const addAction = vi.fn((): HTMLElement => activeDocument.createElement('button'));
+      const addAction = vi.fn((): HTMLElement => activeWindow.createEl('button'));
       const itemView = createItemView({ addAction });
       getActiveViewOfType.mockReturnValue(itemView);
 
@@ -343,7 +343,7 @@ describe('RefreshAnyViewComponent', () => {
       let capturedAction: (() => void) | undefined;
       const addAction = vi.fn((_icon: string, _title: string, callback: () => void): HTMLElement => {
         capturedAction = callback;
-        return activeDocument.createElement('button');
+        return activeWindow.createEl('button');
       });
       const itemView = createItemView({ addAction, leaf });
       getActiveViewOfType.mockReturnValue(itemView);
@@ -357,7 +357,7 @@ describe('RefreshAnyViewComponent', () => {
 
     it('should remove the action button on cleanup', () => {
       const component = createLoadedComponent();
-      const button = activeDocument.createElement('button');
+      const button = activeWindow.createEl('button');
       activeDocument.body.appendChild(button);
       const removeSpy = vi.spyOn(button, 'remove');
       const addAction = vi.fn((): HTMLElement => button);
@@ -586,7 +586,7 @@ describe('RefreshAnyViewComponent', () => {
       const leaf = realLeaf();
       leaf.view = castTo<ViewOriginal>({ getViewType: () => 'markdown' });
       const evt = new MouseEvent('click');
-      const parentEl = activeDocument.createElement('div');
+      const parentEl = activeWindow.createDiv();
       castTo<WorkspaceLeafOriginal>(leaf).onOpenTabHeaderMenu(evt, parentEl);
 
       expect(baseSpy).toHaveBeenCalled();
@@ -645,7 +645,7 @@ describe('RefreshAnyViewComponent', () => {
   describe('executeKeepingFocus', () => {
     it('should run the callback and restore focus to the active element', async () => {
       const component = createLoadedComponent();
-      const button = activeDocument.createElement('button');
+      const button = activeWindow.createEl('button');
       activeDocument.body.appendChild(button);
       button.focus();
       const focusSpy = vi.spyOn(button, 'focus');
@@ -660,7 +660,7 @@ describe('RefreshAnyViewComponent', () => {
 
     it('should restore focus even when the callback throws', async () => {
       const component = createLoadedComponent();
-      const button = activeDocument.createElement('button');
+      const button = activeWindow.createEl('button');
       activeDocument.body.appendChild(button);
       button.focus();
       const focusSpy = vi.spyOn(button, 'focus');
