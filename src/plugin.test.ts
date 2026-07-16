@@ -43,14 +43,6 @@ vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', 
   PluginSettingsTabComponent: await loadableComponentStub()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/components/menu-event-registrar-component', async () => ({
-  MenuEventRegistrarComponent: await loadableComponentStub()
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/command-handlers/command-handler-component', async () => ({
-  CommandHandlerComponent: await loadableComponentStub()
-}));
-
 // Non-child dev-utils collaborators (constructed, not added via `addChild`): plain `vi.fn()` stubs.
 vi.mock('obsidian-dev-utils/obsidian/data-handler', () => ({
   PluginDataHandler: vi.fn()
@@ -58,14 +50,6 @@ vi.mock('obsidian-dev-utils/obsidian/data-handler', () => ({
 
 vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-event-source', () => ({
   PluginEventSourceImpl: vi.fn()
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/command-registrar', () => ({
-  PluginCommandRegistrar: vi.fn()
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/active-file-provider', () => ({
-  AppActiveFileProvider: vi.fn()
 }));
 
 // The plugin's OWN sibling modules (allowed doubles). `PluginSettingsComponent` and
@@ -82,10 +66,6 @@ vi.mock('./plugin-settings-tab.ts', () => ({
   PluginSettingsTab: vi.fn()
 }));
 
-interface CommandHandlersHolder {
-  commandHandlers: unknown[];
-}
-
 interface RefreshAnyViewComponentHolder {
   refreshAnyViewComponent: RefreshAnyViewComponent;
 }
@@ -101,6 +81,9 @@ vi.mock('./command-handlers/refresh-all-open-views-command-handler.ts', () => ({
 vi.mock('./command-handlers/refresh-all-visible-views-command-handler.ts', () => ({
   RefreshAllVisibleViewsCommandHandler: vi.fn()
 }));
+
+// The base pre-wires `commandHandlerComponent`; stub its `registerCommandHandlers` so the plugin's registration is asserted without exercising the mocked command handlers.
+vi.spyOn(CommandHandlerComponent.prototype, 'registerCommandHandlers').mockReturnValue(castTo<Disposable>({}));
 
 const manifest: PluginManifest = {
   author: 'test',
@@ -145,8 +128,12 @@ describe('Plugin', () => {
   it('should register all three command handlers with the command handler component', async () => {
     await createLoadedPlugin();
 
-    const params = castTo<CommandHandlersHolder>(vi.mocked(CommandHandlerComponent).mock.calls[0]?.[0]);
-    expect(params.commandHandlers).toHaveLength(3);
+    // The base separately auto-registers its own handler, so assert the plugin's own registration by its three handlers rather than the total call count.
+    expect(CommandHandlerComponent.prototype.registerCommandHandlers).toHaveBeenCalledWith([
+      expect.any(RefreshActiveViewCommandHandler),
+      expect.any(RefreshAllVisibleViewsCommandHandler),
+      expect.any(RefreshAllOpenViewsCommandHandler)
+    ]);
   });
 });
 
