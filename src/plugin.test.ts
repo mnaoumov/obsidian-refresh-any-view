@@ -2,7 +2,6 @@ import type {
   App as AppOriginal,
   PluginManifest
 } from 'obsidian';
-
 import type { DisposableEx } from 'obsidian-dev-utils/disposable';
 
 import { castTo } from 'obsidian-dev-utils/object-utils';
@@ -133,7 +132,7 @@ describe('Plugin', () => {
     }
   });
 
-  it('should register all three command handlers with the command handler component', async () => {
+  it('should register all four command handlers with the command handler component', async () => {
     await createLoadedPlugin();
 
     // The base separately auto-registers its own handler, so assert the plugin's own registration by its four handlers rather than the total call count.
