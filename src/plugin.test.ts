@@ -2,9 +2,12 @@ import type {
   App as AppOriginal,
   PluginManifest
 } from 'obsidian';
+import type { DisposableEx } from 'obsidian-dev-utils/disposable';
 
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
+import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
+import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   afterEach,
@@ -82,8 +85,12 @@ vi.mock('./command-handlers/refresh-all-visible-views-command-handler.ts', () =>
   RefreshAllVisibleViewsCommandHandler: vi.fn()
 }));
 
+vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler', () => ({
+  OpenDemoVaultCommandHandler: vi.fn()
+}));
+
 // The base pre-wires `commandHandlerComponent`; stub its `registerCommandHandlers` so the plugin's registration is asserted without exercising the mocked command handlers.
-vi.spyOn(CommandHandlerComponent.prototype, 'registerCommandHandlers').mockReturnValue(castTo<Disposable>({}));
+vi.spyOn(CommandHandlerComponent.prototype, 'registerCommandHandlers').mockReturnValue(strictProxy<DisposableEx>({}));
 
 const manifest: PluginManifest = {
   author: 'test',
@@ -125,14 +132,15 @@ describe('Plugin', () => {
     }
   });
 
-  it('should register all three command handlers with the command handler component', async () => {
+  it('should register all four command handlers with the command handler component', async () => {
     await createLoadedPlugin();
 
-    // The base separately auto-registers its own handler, so assert the plugin's own registration by its three handlers rather than the total call count.
+    // The base separately auto-registers its own handler, so assert the plugin's own registration by its four handlers rather than the total call count.
     expect(CommandHandlerComponent.prototype.registerCommandHandlers).toHaveBeenCalledWith([
       expect.any(RefreshActiveViewCommandHandler),
       expect.any(RefreshAllVisibleViewsCommandHandler),
-      expect.any(RefreshAllOpenViewsCommandHandler)
+      expect.any(RefreshAllOpenViewsCommandHandler),
+      expect.any(OpenDemoVaultCommandHandler)
     ]);
   });
 });
