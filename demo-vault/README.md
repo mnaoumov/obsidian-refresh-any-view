@@ -1,9 +1,8 @@
-# Refresh Any View demo vault
+This is an [Obsidian](https://obsidian.md/) vault demonstrating features of the [Refresh Any View](https://github.com/mnaoumov/obsidian-refresh-any-view) plugin.
 
-A small Obsidian vault that demonstrates the [Refresh Any View](https://github.com/mnaoumov/obsidian-refresh-any-view) plugin - it re-renders any view in place, without reopening it, so dynamic content (queries, embeds, rendered timestamps) can update on demand or automatically.
+## Opening this vault
 
-Open [00 Start](<./00 Start.md>), then open [01 Refresh a view](<./01 Refresh a view.md>) and use the **Refresh view** toolbar button or the **Refresh Any View: Refresh active view** command.
+- **If you already have the plugin installed**, run the **Refresh Any View: Open demo vault** command — it downloads and opens the latest demo vault automatically.
+- **Otherwise**, download `refresh-preview.demo-vault.zip` from the [plugin releases](https://github.com/mnaoumov/obsidian-refresh-any-view/releases), unzip it, and in Obsidian choose `Manage vaults...` → `Open folder as vault` → select the unzipped folder.
 
-## First open
-
-The first time you open this vault, Obsidian treats it as **untrusted**, so the bundled plugins are listed but not loaded until you **Trust author and enable plugins** and reload. After that, the Demo Vault Helper opens the start note for you.
+On first open, Obsidian treats the vault as untrusted — choose **Trust author and enable plugins** (or enable Community plugins manually), then open [00 Start](<./00 Start.md>).
