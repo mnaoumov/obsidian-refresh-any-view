@@ -2,16 +2,7 @@ Welcome to the [Refresh Any View](https://github.com/mnaoumov/obsidian-refresh-a
 
 **How to see it:** open [[01 Refresh a view]] and follow the steps - run **Refresh Any View: Refresh active view**, or click the **Refresh view** button the plugin adds to the view's toolbar (top-right, the circular-arrows icon).
 
-> [!TIP] Interactive buttons
->
-> The two setup notes have **Run** buttons, powered by [`CodeScript Toolkit`](https://github.com/mnaoumov/obsidian-codescript-toolkit/), which this vault installs for you automatically on first open (see [[04 CodeScript Toolkit prerequisite]]). The feature itself is driven by commands and the toolbar button, so the feature notes have no buttons.
-
 ## Feature
 
 - [[01 Refresh a view]]
 - [[02 Settings]]
-
-## Setup
-
-- [[03 Code buttons check]]
-- [[04 CodeScript Toolkit prerequisite]]
