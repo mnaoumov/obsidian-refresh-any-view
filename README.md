@@ -34,7 +34,7 @@ The plugin allows to configure auto refresh within a given time interval (it may
 A demo vault with usage examples ships with every release. You can access it via any of the following:
 
 1. Running the **Refresh Any View: Open demo vault** command.
-2. Downloading `refresh-preview.demo-vault.zip` from the [Releases](https://github.com/mnaoumov/obsidian-refresh-any-view/releases).
+2. Downloading `refresh-preview-demo-vault-<version>.zip` (`<version>` is the release version) from the [Releases](https://github.com/mnaoumov/obsidian-refresh-any-view/releases).
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
 
 ## Installation
