@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.6.0
+
+- refactor(settings): move the settings tab onto the declarative settings API
+- chore: update libs and clear the npm audit
+- docs: fix the demo vault download instructions
+
 ## 3.5.28
 
 - chore: update libs
