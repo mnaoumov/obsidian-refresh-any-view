@@ -3,6 +3,7 @@ import type {
   PluginManifest
 } from 'obsidian';
 import type { DisposableEx } from 'obsidian-dev-utils/disposable';
+import type { CommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler';
 
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
@@ -101,6 +102,15 @@ const manifest: PluginManifest = {
   version: '1.0.0'
 };
 
+// The subset of `App` the dev-utils Notebook Navigator bridge reads on layout-ready.
+interface AppWithPlugins {
+  plugins: PluginRegistryLike;
+}
+
+interface PluginRegistryLike {
+  getPlugin(this: void, id: string): unknown;
+}
+
 let app: AppOriginal;
 let loadedPlugin: Plugin | undefined;
 
@@ -108,9 +118,12 @@ describe('Plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     const appMock = App.createConfigured__();
-    appMock.workspace.onLayoutReady = vi.fn((cb: () => void) => {
-      cb();
+    appMock.workspace.onLayoutReady = vi.fn((callback: () => void) => {
+      callback();
     });
+    // Since obsidian-dev-utils 89.0.0 the base bridges its command handlers into Notebook Navigator's
+    // Menus, which looks the plugin up on layout-ready — so `plugins` has to answer on the strict mock.
+    castTo<AppWithPlugins>(appMock).plugins = { getPlugin: vi.fn().mockReturnValue(null) };
     app = appMock.asOriginalType__();
   });
 
@@ -122,11 +135,14 @@ describe('Plugin', () => {
   it('should wire the RefreshAnyViewComponent into all three command handlers', async () => {
     await createLoadedPlugin();
 
+    buildPluginCommandHandlers();
     const refreshAnyViewComponent = castTo<RefreshAnyViewComponent>(vi.mocked(RefreshAnyViewComponentImport).mock.results[0]?.value);
     expect(refreshAnyViewComponent).toBeDefined();
 
     for (const HandlerClass of [RefreshActiveViewCommandHandler, RefreshAllVisibleViewsCommandHandler, RefreshAllOpenViewsCommandHandler]) {
-      expect(vi.mocked(HandlerClass)).toHaveBeenCalledTimes(1);
+      // Since obsidian-dev-utils 89.0.0 the factory runs once per menu surface, so a handler is
+      // Constructed more than once by design.
+      expect(vi.mocked(HandlerClass)).toHaveBeenCalled();
       const params = castTo<RefreshAnyViewComponentHolder>(vi.mocked(HandlerClass).mock.calls[0]?.[0]);
       expect(params.refreshAnyViewComponent).toBe(refreshAnyViewComponent);
     }
@@ -136,7 +152,7 @@ describe('Plugin', () => {
     await createLoadedPlugin();
 
     // The base separately auto-registers its own handler, so assert the plugin's own registration by its four handlers rather than the total call count.
-    expect(CommandHandlerComponent.prototype.registerCommandHandlers).toHaveBeenCalledWith([
+    expect(buildPluginCommandHandlers()).toStrictEqual([
       expect.any(RefreshActiveViewCommandHandler),
       expect.any(RefreshAllVisibleViewsCommandHandler),
       expect.any(RefreshAllOpenViewsCommandHandler),
@@ -144,6 +160,18 @@ describe('Plugin', () => {
     ]);
   });
 });
+
+// `registerCommandHandlers` takes a factory since obsidian-dev-utils 89.0.0, and the base registers its
+// Own handlers through the same spy — so pick the plugin's own factory by what it builds.
+function buildPluginCommandHandlers(): CommandHandler[] {
+  const commandHandlerBatches = vi.mocked(CommandHandlerComponent.prototype.registerCommandHandlers).mock.calls
+    .map(([commandHandlerFactory]) => commandHandlerFactory());
+  const pluginCommandHandlers = commandHandlerBatches.find((commandHandlers) => commandHandlers.some((commandHandler) => commandHandler instanceof RefreshActiveViewCommandHandler));
+  if (!pluginCommandHandlers) {
+    throw new Error('The plugin did not register its own command handlers.');
+  }
+  return pluginCommandHandlers;
+}
 
 async function createLoadedPlugin(): Promise<Plugin> {
   const plugin = new Plugin(app, manifest);

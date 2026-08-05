@@ -169,10 +169,10 @@ export class RefreshAnyViewComponent extends LayoutReadyComponent {
     }
   }
 
-  private getLeaves(condition: (leaf: WorkspaceLeaf) => boolean): WorkspaceLeaf[] {
+  private getLeaves(checkLeaf: (leaf: WorkspaceLeaf) => boolean): WorkspaceLeaf[] {
     const leaves: WorkspaceLeaf[] = [];
     this.app.workspace.iterateAllLeaves((leaf) => {
-      if (condition(leaf)) {
+      if (checkLeaf(leaf)) {
         leaves.push(leaf);
       }
     });
@@ -211,16 +211,21 @@ export class RefreshAnyViewComponent extends LayoutReadyComponent {
 
   private isMatchingAutoRefreshMode(view: View): boolean {
     switch (this.pluginSettingsComponent.settings.autoRefreshMode) {
-      case AutoRefreshMode.ActiveView:
+      case AutoRefreshMode.ActiveView: {
         return view === this.app.workspace.getActiveViewOfType(View);
-      case AutoRefreshMode.AllOpenViews:
+      }
+      case AutoRefreshMode.AllOpenViews: {
         return true;
-      case AutoRefreshMode.AllVisibleViews:
+      }
+      case AutoRefreshMode.AllVisibleViews: {
         return view.leaf.isVisible();
-      case AutoRefreshMode.Off:
+      }
+      case AutoRefreshMode.Off: {
         return false;
-      default:
+      }
+      default: {
         return false;
+      }
     }
   }
 
@@ -241,8 +246,8 @@ export class RefreshAnyViewComponent extends LayoutReadyComponent {
     await Promise.all(promises);
   }
 
-  private async refreshViews(condition: (view: View) => boolean): Promise<void> {
-    const leaves = this.getLeaves((leaf) => condition(leaf.view));
+  private async refreshViews(checkView: (view: View) => boolean): Promise<void> {
+    const leaves = this.getLeaves((leaf) => checkView(leaf.view));
 
     await this.executeKeepingFocus(async () => {
       const promises = leaves.map((leaf) => this.refreshView(leaf.view));

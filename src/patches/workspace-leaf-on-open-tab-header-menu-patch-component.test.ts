@@ -26,7 +26,7 @@ import type { RefreshAnyViewComponent } from '../refresh-any-view-component.ts';
 import { WorkspaceLeafOnOpenTabHeaderMenuPatchComponent } from './workspace-leaf-on-open-tab-header-menu-patch-component.ts';
 
 interface MenuItemTestable {
-  onClick__?(evt: unknown): void;
+  onClick__?($event: unknown): void;
 }
 
 interface MenuTestable {
@@ -111,8 +111,8 @@ function loadPatchComponent(spec: RefreshAnyViewComponentStubSpec): WorkspaceLea
 function openTabHeaderMenu(view: Partial<ViewOriginal>): WorkspaceLeaf {
   const leaf = WorkspaceLeaf.create2__(appMock);
   leaf.view = castTo<typeof leaf.view>(view);
-  const evt = new MouseEvent('click');
+  const $event = new MouseEvent('click');
   const parentEl = activeWindow.createDiv();
-  castTo<WorkspaceLeafOriginal>(leaf).onOpenTabHeaderMenu(evt, parentEl);
+  castTo<WorkspaceLeafOriginal>(leaf).onOpenTabHeaderMenu($event, parentEl);
   return leaf;
 }
