@@ -37,7 +37,7 @@ export class Plugin extends PluginBase {
       })
     );
 
-    this.commandHandlerComponent.registerCommandHandlers([
+    this.commandHandlerComponent.registerCommandHandlers(() => [
       new RefreshActiveViewCommandHandler({
         refreshAnyViewComponent
       }),

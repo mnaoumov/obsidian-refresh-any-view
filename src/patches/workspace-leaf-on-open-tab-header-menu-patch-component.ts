@@ -17,16 +17,16 @@ export class WorkspaceLeafOnOpenTabHeaderMenuPatchComponent extends MonkeyAround
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: WorkspaceLeaf.prototype,
       methodName: 'onOpenTabHeaderMenu',
-      obj: WorkspaceLeaf.prototype,
       patchHandler: ({
         fallback,
-        originalArgs: [evt],
+        originalArguments: [$event],
         originalThis
       }) => {
         const leaf = originalThis;
         fallback();
-        const menu = Menu.forEvent(evt);
+        const menu = Menu.forEvent($event);
         menu.addItem((item) => {
           item.setTitle('Refresh view');
           item.setIcon('refresh-cw');

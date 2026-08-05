@@ -38,7 +38,7 @@ import { RefreshAnyViewComponent } from './refresh-any-view-component.ts';
 const mockGetCacheSafe = vi.fn((): Promise<undefined> => Promise.resolve(undefined));
 vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => ({
   ...await importOriginal<typeof import('obsidian-dev-utils/obsidian/metadata-cache')>(),
-  getCacheSafe: (...args: unknown[]): Promise<undefined> => mockGetCacheSafe(...castTo<[]>(args))
+  getCacheSafe: (...$arguments: unknown[]): Promise<undefined> => mockGetCacheSafe(...castTo<[]>($arguments))
 }));
 
 const mockIsFile = vi.fn((_file: unknown): boolean => true);
@@ -66,7 +66,7 @@ const ItemViewClass = castTo<new (leaf: WorkspaceLeaf) => ItemView>(ItemView);
 
 // --- Component private surface (sanctioned `castTo<Testable>` access) ---
 
-type AddActionFn = (icon: string, title: string, callback: () => void) => HTMLElement;
+type AddActionFunction = (icon: string, title: string, callback: () => void) => HTMLElement;
 
 interface LeafStubSpec {
   isDeferred?: boolean;
@@ -85,7 +85,7 @@ interface Testable {
   isVisibleView(view: ViewOriginal): boolean;
   loadDeferredViews(): Promise<void>;
   onLayoutReady(): Promise<void>;
-  refreshViews(condition: (view: ViewOriginal) => boolean): Promise<void>;
+  refreshViews(checkView: (view: ViewOriginal) => boolean): Promise<void>;
   registerAutoRefreshTimer(): void;
 }
 
@@ -173,8 +173,8 @@ describe('RefreshAnyViewComponent', () => {
       const rebuildView = vi.fn(asyncNoop);
       const leaf = createLeafStub({ rebuildView });
       leaf.view = createGenericView({}, leaf);
-      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
-        cb(leaf);
+      iterateAllLeaves.mockImplementation((callback: (leaf: WorkspaceLeafOriginal) => void) => {
+        callback(leaf);
       });
 
       await component.refreshAllOpenViews();
@@ -188,8 +188,8 @@ describe('RefreshAnyViewComponent', () => {
       const rebuildView = vi.fn(asyncNoop);
       const leaf = createLeafStub({ isVisible: false, rebuildView });
       leaf.view = createGenericView({}, leaf);
-      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
-        cb(leaf);
+      iterateAllLeaves.mockImplementation((callback: (leaf: WorkspaceLeafOriginal) => void) => {
+        callback(leaf);
       });
 
       await component.refreshAllVisibleViews();
@@ -202,8 +202,8 @@ describe('RefreshAnyViewComponent', () => {
       const rebuildView = vi.fn(asyncNoop);
       const leaf = createLeafStub({ isVisible: true, rebuildView });
       leaf.view = createGenericView({}, leaf);
-      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
-        cb(leaf);
+      iterateAllLeaves.mockImplementation((callback: (leaf: WorkspaceLeafOriginal) => void) => {
+        callback(leaf);
       });
 
       await component.refreshAllVisibleViews();
@@ -358,7 +358,7 @@ describe('RefreshAnyViewComponent', () => {
     it('should remove the action button on cleanup', () => {
       const component = createLoadedComponent();
       const button = activeWindow.createEl('button');
-      activeDocument.body.appendChild(button);
+      activeDocument.body.append(button);
       const removeSpy = vi.spyOn(button, 'remove');
       const addAction = vi.fn((): HTMLElement => button);
       const itemView = createItemView({ addAction });
@@ -401,8 +401,8 @@ describe('RefreshAnyViewComponent', () => {
       const rebuildView = vi.fn(asyncNoop);
       const leaf = createLeafStub({ rebuildView });
       leaf.view = createFileView({ file: sharedFile, viewType: 'test' }, leaf);
-      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
-        cb(leaf);
+      iterateAllLeaves.mockImplementation((callback: (leaf: WorkspaceLeafOriginal) => void) => {
+        callback(leaf);
       });
 
       testable(component).handleModify(sharedFile);
@@ -540,8 +540,8 @@ describe('RefreshAnyViewComponent', () => {
       mockSettings.shouldLoadDeferredViewsOnStart = true;
       const loadIfDeferred = vi.fn(asyncNoop);
       const leaf = createLeafStub({ isDeferred: true, loadIfDeferred });
-      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
-        cb(leaf);
+      iterateAllLeaves.mockImplementation((callback: (leaf: WorkspaceLeafOriginal) => void) => {
+        callback(leaf);
       });
 
       vi.useFakeTimers();
@@ -585,9 +585,9 @@ describe('RefreshAnyViewComponent', () => {
 
       const leaf = realLeaf();
       leaf.view = castTo<ViewOriginal>({ getViewType: () => 'markdown' });
-      const evt = new MouseEvent('click');
+      const $event = new MouseEvent('click');
       const parentEl = activeWindow.createDiv();
-      castTo<WorkspaceLeafOriginal>(leaf).onOpenTabHeaderMenu(evt, parentEl);
+      castTo<WorkspaceLeafOriginal>(leaf).onOpenTabHeaderMenu($event, parentEl);
 
       expect(baseSpy).toHaveBeenCalled();
     });
@@ -631,8 +631,8 @@ describe('RefreshAnyViewComponent', () => {
       const rebuildView = vi.fn(asyncNoop);
       const leaf = createLeafStub({ rebuildView });
       leaf.view = createGenericView({ viewType: 'test' }, leaf);
-      iterateAllLeaves.mockImplementation((cb: (leaf: WorkspaceLeafOriginal) => void) => {
-        cb(leaf);
+      iterateAllLeaves.mockImplementation((callback: (leaf: WorkspaceLeafOriginal) => void) => {
+        callback(leaf);
       });
 
       vi.useFakeTimers();
@@ -646,7 +646,7 @@ describe('RefreshAnyViewComponent', () => {
     it('should run the callback and restore focus to the active element', async () => {
       const component = createLoadedComponent();
       const button = activeWindow.createEl('button');
-      activeDocument.body.appendChild(button);
+      activeDocument.body.append(button);
       button.focus();
       const focusSpy = vi.spyOn(button, 'focus');
       const callback = vi.fn(asyncNoop);
@@ -661,7 +661,7 @@ describe('RefreshAnyViewComponent', () => {
     it('should restore focus even when the callback throws', async () => {
       const component = createLoadedComponent();
       const button = activeWindow.createEl('button');
-      activeDocument.body.appendChild(button);
+      activeDocument.body.append(button);
       button.focus();
       const focusSpy = vi.spyOn(button, 'focus');
       const callback = vi.fn((): Promise<void> => Promise.reject(new Error('boom')));
@@ -716,14 +716,14 @@ interface GenericViewSpec extends ViewStubMembers {
 }
 
 interface ItemViewAugment {
-  addAction: AddActionFn;
+  addAction: AddActionFunction;
   containerEl: HTMLElement;
   getViewType(): string;
   leaf: WorkspaceLeafOriginal;
 }
 
 interface ItemViewSpec {
-  addAction: AddActionFn;
+  addAction: AddActionFunction;
   leaf?: WorkspaceLeafOriginal;
 }
 
