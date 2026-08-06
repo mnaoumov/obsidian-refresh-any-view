@@ -12,7 +12,7 @@ import { PluginSettingsTab } from './plugin-settings-tab.ts';
 import { RefreshAnyViewComponent } from './refresh-any-view-component.ts';
 
 export class Plugin extends PluginBase {
-  protected override onloadImpl(): void {
+  protected override async onloadImpl(): Promise<void> {
     const pluginSettingsComponent = this.addChild(
       new PluginSettingsComponent({
         dataHandler: new PluginDataHandler(this),
@@ -37,7 +37,7 @@ export class Plugin extends PluginBase {
       })
     );
 
-    this.commandHandlerComponent.registerCommandHandlers(() => [
+    await this.commandHandlerComponent.registerCommandHandlers(() => [
       new RefreshActiveViewCommandHandler({
         refreshAnyViewComponent
       }),
