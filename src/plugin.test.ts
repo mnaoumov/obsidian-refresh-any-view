@@ -91,7 +91,7 @@ vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-ha
 }));
 
 // The base pre-wires `commandHandlerComponent`; stub its `registerCommandHandlers` so the plugin's registration is asserted without exercising the mocked command handlers.
-vi.spyOn(CommandHandlerComponent.prototype, 'registerCommandHandlers').mockReturnValue(strictProxy<DisposableEx>({}));
+vi.spyOn(CommandHandlerComponent.prototype, 'registerCommandHandlers').mockResolvedValue(strictProxy<DisposableEx>({}));
 
 const manifest: PluginManifest = {
   author: 'test',
