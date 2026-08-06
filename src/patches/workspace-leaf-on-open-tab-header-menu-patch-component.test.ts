@@ -30,7 +30,9 @@ interface MenuItemTestable {
 }
 
 interface MenuTestable {
-  items__: MenuItemTestable[];
+  // `menuItems__`, not `items__`: since obsidian-test-mocks 3.11.0 the latter also holds separators, and
+  // Every read here is of a member only a MenuItem has.
+  menuItems__: MenuItemTestable[];
 }
 
 interface RefreshAnyViewComponentStubSpec {
@@ -63,7 +65,7 @@ describe('WorkspaceLeafOnOpenTabHeaderMenuPatchComponent', () => {
 
     expect(baseSpy).toHaveBeenCalled();
     const menu = castTo<MenuTestable>(forEventSpy.mock.results[0]?.value);
-    expect(menu.items__).toHaveLength(2);
+    expect(menu.menuItems__).toHaveLength(2);
   });
 
   it('should refresh the leaf view when the first menu item is clicked', async () => {
@@ -75,7 +77,7 @@ describe('WorkspaceLeafOnOpenTabHeaderMenuPatchComponent', () => {
     const leaf = openTabHeaderMenu(view);
 
     const menu = castTo<MenuTestable>(forEventSpy.mock.results[0]?.value);
-    menu.items__[0]?.onClick__?.(new MouseEvent('click'));
+    menu.menuItems__[0]?.onClick__?.(new MouseEvent('click'));
     await waitForAllAsyncOperations();
     expect(refreshView).toHaveBeenCalledWith(castTo<WorkspaceLeafOriginal>(leaf).view);
   });
@@ -92,7 +94,7 @@ describe('WorkspaceLeafOnOpenTabHeaderMenuPatchComponent', () => {
     openTabHeaderMenu({ getViewType: () => 'some-view-type' });
 
     const menu = castTo<MenuTestable>(forEventSpy.mock.results[0]?.value);
-    menu.items__[1]?.onClick__?.(new MouseEvent('click'));
+    menu.menuItems__[1]?.onClick__?.(new MouseEvent('click'));
     await waitForAllAsyncOperations();
     expect(writeText).toHaveBeenCalledWith('some-view-type');
   });
