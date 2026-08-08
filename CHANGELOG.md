@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.6.2
+
+- chore: update libs and adopt obsidian-integration-testing 10
+- test: read Menu.menuItems__ instead of Menu.items__
+
 ## 3.6.1
 
 - chore: update libs
