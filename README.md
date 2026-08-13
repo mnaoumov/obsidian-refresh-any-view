@@ -1,41 +1,40 @@
 # Refresh Any View
 
-> formerly known as `Refresh Preview`, see [Rebranding](#rebranding) section for more details
-
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov)
 [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-refresh-any-view)](https://github.com/mnaoumov/obsidian-refresh-any-view/releases)
 [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-refresh-any-view/total)](https://github.com/mnaoumov/obsidian-refresh-any-view/releases)
 [![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/mnaoumov/obsidian-refresh-any-view)
 
-This is a plugin for [Obsidian](https://obsidian.md/) that allows to refresh any view without reopening it.
+[Obsidian](https://obsidian.md/) renders a view once, when it opens. So a note showing a Dataview
+query, an embedded note, output from another plugin, or simply the current time keeps showing its
+*original* render — the content is stale and the only way to update it is to close the tab and open it
+again, losing your place.
 
-It is usually useful if you have some dynamic content:
-
-````markdown
-```dataviewjs
-dv.span(new Date().toString());
-```
-````
-
-When you switch to the preview or live preview mode, the content is rendered once and will rerender only if you change the content of the code block or reopen the note.
-
-The plugin adds a `Refresh` button:
-
-![Demo](images/demo.gif)
-
-Also the plugin adds the `Refresh Any View: Refresh active view` command to the command palette.
-
-The plugin allows to configure auto refresh on file change.
-
-The plugin allows to configure auto refresh within a given time interval (it may introduce undesired UI flickering).
+This plugin re-renders any view **in place**, keeping your scroll position: from a toolbar button, from
+a command, or automatically on file change or on a timer.
 
 ## Demo vault
 
-A demo vault with usage examples ships with every release. You can access it via any of the following:
+**The documentation is a demo vault.** Every feature has a note that explains what it does and why you
+would want it, and walks you through it.
+
+**[Start reading here](<./demo-vault/00 Start.md>)** — it is plain markdown, so it works on GitHub with
+nothing installed.
+
+A copy of the vault ships with every release. You can access it via any of the following:
 
 1. Running the **Refresh Any View: Open demo vault** command.
 2. Downloading `refresh-preview-demo-vault-<version>.zip` (`<version>` is the release version) from the [Releases](https://github.com/mnaoumov/obsidian-refresh-any-view/releases).
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
+
+## What it does
+
+- **Refresh in place** — a toolbar button on every view, plus commands for the active view, every
+  visible view, or every open view. Your scroll position survives.
+  [01 Refresh a view](<./demo-vault/01 Refresh a view.md>)
+- **Refresh automatically** — on file change, or on an interval, for content that should not wait for
+  you to ask.
+  [02 Settings](<./demo-vault/02 Settings.md>)
 
 ## Installation
 
@@ -65,13 +64,21 @@ For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-dev
 
 This plugin was formerly known as `Refresh Preview`.
 
-The plugin can now refresh any views, not only in preview mode. That's why it got a new name.
+The plugin was extended to refresh any view, not just the preview, so it got a new name.
 
-However, for the backward compatibility, the previous id `refresh-preview` is still used internally and you might find it
+However, for backward compatibility, the previous id `refresh-preview` is still used internally and you might find it
 
-- in plugin folder name;
-- in plugin URL;
-- in [Debugging](#debugging) section;
+- in the plugin folder name;
+- in the plugin URL;
+- in the [Debugging](#debugging) section.
+
+## Changelog
+
+All notable changes to this project will be documented in the [CHANGELOG](./CHANGELOG.md).
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING](./CONTRIBUTING.md) to get set up.
 
 ## Support
 

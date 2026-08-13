@@ -6,10 +6,17 @@ Obsidian renders a view once, when it opens. If the view shows **dynamic content
 
 The plugin gives you a toolbar button and three commands:
 
-- **Refresh view** button - the circular-arrows icon the plugin adds to every view's toolbar (top-right of the tab). Refreshes just that view.
-- **Refresh Any View: Refresh active view** - refreshes the currently focused view.
-- **Refresh Any View: Refresh all visible views** - refreshes every view you can currently see (all panes on screen).
-- **Refresh Any View: Refresh all open views** - refreshes every open view, including background tabs.
+- **Refresh view** button
+  - the circular-arrows icon the plugin adds to every view's toolbar (top-right of the tab). Refreshes
+    just that view.
+- **Refresh Any View: Refresh active view**
+  - refreshes the currently focused view.
+- **Refresh Any View: Refresh all visible views**
+  - refreshes every view you can currently see (all panes on screen).
+- **Refresh Any View: Refresh all open views**
+  - refreshes every open view, including background tabs.
+
+![The refresh button re-rendering a view in place](<./_assets/images/demo.gif>)
 
 ## Try it
 
