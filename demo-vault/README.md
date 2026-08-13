@@ -1,3 +1,5 @@
+# Refresh Any View demo vault
+
 This is an [Obsidian](https://obsidian.md/) vault demonstrating features of the [Refresh Any View](https://github.com/mnaoumov/obsidian-refresh-any-view) plugin.
 
 ## Opening this vault

@@ -1,5 +1,3 @@
-[Docs](https://github.com/mnaoumov/obsidian-refresh-any-view/)
-
 # Refresh a view
 
 Obsidian renders a view once, when it opens. If the view shows **dynamic content** - a Dataview query, an embedded note, a rendered timestamp, output from another plugin - that content is frozen at first render and only updates when you close and reopen the view. **Refresh Any View** re-renders the view **in place** instead, preserving your scroll position.
@@ -31,4 +29,4 @@ dv.span(new Date().toString());
 
 With that block, switching to Reading mode shows a timestamp that stays frozen. Running **Refresh active view** re-renders the block and updates the timestamp - no reopening needed. (That specific example needs the community **Dataview** plugin, which this demo vault does not bundle; the refresh commands themselves work on any view.)
 
-Prefer it to happen automatically? See [[02 Settings]] for auto-refresh on file change and on a timer.
+Prefer it to happen automatically? See [02 Settings](<./02 Settings.md>) for auto-refresh on file change and on a timer.
