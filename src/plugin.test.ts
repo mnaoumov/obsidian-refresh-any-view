@@ -47,14 +47,9 @@ vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', 
   PluginSettingsTabComponent: await loadableComponentStub()
 }));
 
-// Non-child dev-utils collaborators (constructed, not added via `addChild`): plain `vi.fn()` stubs.
-vi.mock('obsidian-dev-utils/obsidian/data-handler', () => ({
-  PluginDataHandler: vi.fn()
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-event-source', () => ({
-  PluginEventSourceImpl: vi.fn()
-}));
+// `PluginDataHandler` and `PluginEventSourceImpl` are NOT stubbed: since obsidian-dev-utils 93.2 the base
+// Builds its own settings component out of them during `onload`, and that component really calls
+// `pluginEventSource.on`, so a bare `vi.fn()` double makes the base throw before `onloadImpl` runs (G49).
 
 // The plugin's OWN sibling modules (allowed doubles). `PluginSettingsComponent` and
 // `RefreshAnyViewComponent` are `addChild`ed, so they must be loadable `Component`s.
