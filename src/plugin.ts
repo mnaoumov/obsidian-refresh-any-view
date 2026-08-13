@@ -19,6 +19,7 @@ export class Plugin extends PluginBase {
         pluginEventSource: new PluginEventSourceImpl(this)
       })
     );
+    this.pluginSettingsComponent = pluginSettingsComponent;
 
     this.addChild(
       new PluginSettingsTabComponent({
