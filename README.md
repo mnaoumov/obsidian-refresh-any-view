@@ -13,6 +13,19 @@ again, losing your place.
 This plugin re-renders any view **in place**, keeping your scroll position: from a toolbar button, from
 a command, or automatically on file change or on a timer.
 
+<!-- markdownlint-disable MD033 -->
+
+<a href="images/screenshots/screenshot-desktop-1.png"><img src="images/screenshots/screenshot-desktop-1.png" alt="Refresh this view, the visible ones, or every open tab" width="600"></a>
+
+<details>
+<summary>More screenshots</summary>
+
+<a href="images/screenshots/screenshot-desktop-2.png"><img src="images/screenshots/screenshot-desktop-2.png" alt="And a refresh button in every view, top right" width="600"></a>
+
+</details>
+
+<!-- markdownlint-enable MD033 -->
+
 ## Demo vault
 
 **The documentation is a demo vault.** Every feature has a note that explains what it does and why you
