@@ -21,6 +21,8 @@ a command, or automatically on file change or on a timer.
 <summary>More screenshots</summary>
 
 <a href="images/screenshots/screenshot-desktop-2.png"><img src="images/screenshots/screenshot-desktop-2.png" alt="And a refresh button in every view, top right" width="600"></a>
+<a href="images/screenshots/screenshot-mobile-1.png"><img src="images/screenshots/screenshot-mobile-1.png" alt="Refresh this view, the visible ones, or every open tab" width="270"></a>
+<a href="images/screenshots/screenshot-mobile-2.png"><img src="images/screenshots/screenshot-mobile-2.png" alt="And a refresh button in every view, top right" width="270"></a>
 
 </details>
 
