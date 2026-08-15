@@ -24,16 +24,60 @@ The plugin gives you a toolbar button and three commands:
 2. Click the **Refresh view** button in the top-right toolbar, or run **Refresh Any View: Refresh active view** from the Command Palette (`Ctrl`/`Cmd` + `P`).
 3. The view re-renders in place - it does not close and reopen, and your scroll position is kept.
 
-## When it is useful
+## Watch something actually go stale
 
-The classic case is a note with content that renders once but should be re-evaluated on demand. For example, a Dataview `dataviewjs` block that prints the current time renders its value once and then never changes:
+The refresh commands work on any view, but to *see* what they fix you need content that renders once and then drifts. The classic case is a Dataview `dataviewjs` block printing the current time.
 
-````markdown
+This vault cannot bundle Dataview - it is another author's plugin - so the button installs it from Obsidian's own Community plugins registry:
+
+```code-button
+---
+caption: Install and enable Dataview
+---
+await require('/demoSetup.ts').installDataview(app);
+```
+
+Manual equivalent: **Settings -> Community plugins -> Browse**, search for `Dataview`, install and enable it.
+
+With Dataview enabled, switch this note to **Reading** mode. The block below renders the moment you arrive and then never changes again - it is frozen at first render:
+
 ```dataviewjs
 dv.span(new Date().toString());
 ```
-````
 
-With that block, switching to Reading mode shows a timestamp that stays frozen. Running **Refresh active view** re-renders the block and updates the timestamp - no reopening needed. (That specific example needs the community **Dataview** plugin, which this demo vault does not bundle; the refresh commands themselves work on any view.)
+Now refresh the view and watch the timestamp move:
 
-Prefer it to happen automatically? See [02 Settings](<./02 Settings.md>) for auto-refresh on file change and on a timer.
+```code-button
+---
+caption: Refresh active view
+---
+require('/demoSetup.ts').refreshActiveView(app);
+```
+
+Manual equivalent: click the circular-arrows button in this view's top-right toolbar, or run **Refresh Any View: Refresh active view** from the Command Palette.
+
+## Make it happen on its own
+
+Rather than clicking each time, let the plugin re-render on a timer:
+
+```code-button
+---
+caption: Auto-refresh the active view every 2 seconds
+---
+await require('/demoSetup.ts').changeSettings(app, { autoRefreshIntervalInSeconds: 2, autoRefreshMode: 'ActiveView' });
+```
+
+Manual equivalent: set **Auto refresh mode** to `ActiveView` and **Auto refresh interval in seconds** to `2` in **Settings -> Community plugins -> Refresh Any View**.
+
+Back in Reading mode, the timestamp now updates by itself. When you have seen enough, put it back:
+
+```code-button
+---
+caption: Turn auto refresh off again
+---
+await require('/demoSetup.ts').changeSettings(app, { autoRefreshIntervalInSeconds: 5, autoRefreshMode: 'Off' });
+```
+
+Manual equivalent: set **Auto refresh mode** back to `Off` (and the interval back to its default of `5`).
+
+See [02 Settings](<./02 Settings.md>) for the rest, including refreshing on file change.
