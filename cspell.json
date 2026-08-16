@@ -16,7 +16,9 @@
     "Naumov",
     "obsidianmd",
     "offref",
-    "tsbuildinfo"
+    "tsbuildinfo",
+    "unvalidated",
+    "wdio"
   ],
   "ignoreWords": [],
   "import": [],
