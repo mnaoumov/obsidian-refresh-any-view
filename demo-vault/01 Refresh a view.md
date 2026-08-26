@@ -7,8 +7,7 @@ Obsidian renders a view once, when it opens. If the view shows **dynamic content
 The plugin gives you a toolbar button and three commands:
 
 - **Refresh view** button
-  - the circular-arrows icon the plugin adds to every view's toolbar (top-right of the tab). Refreshes
-    just that view.
+  - the circular-arrows icon the plugin adds to every view's toolbar (top-right of the tab). Refreshes just that view.
 - **Refresh Any View: Refresh active view**
   - refreshes the currently focused view.
 - **Refresh Any View: Refresh all visible views**
