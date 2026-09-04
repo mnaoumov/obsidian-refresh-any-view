@@ -4,7 +4,10 @@ import type {
 } from 'obsidian';
 
 import { waitForAllAsyncOperations } from 'obsidian-dev-utils/async';
-import { noopAsync } from 'obsidian-dev-utils/function';
+import {
+  noop,
+  noopAsync
+} from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
@@ -30,13 +33,24 @@ interface MenuItemTestable {
 }
 
 interface MenuTestable {
-  // `menuItems__`, not `items__`: since obsidian-test-mocks 3.11.0 the latter also holds separators, and
+  // `menuItems__`, not `items`: since obsidian-test-mocks 3.11.0 the latter also holds separators, and
   // Every read here is of a member only a MenuItem has.
   menuItems__: MenuItemTestable[];
 }
 
 interface RefreshAnyViewComponentStubSpec {
   refreshView?(view: ViewOriginal): Promise<void>;
+}
+
+/**
+ * The prototype slot this component patches.
+ *
+ * obsidian-test-mocks 5 removed its `onOpenTabHeaderMenu` bridge, which was an inert no-op with nothing
+ * behind it, so reading it throws again. Obsidian really does have the method and this component really
+ * does patch it, so the tests supply the same no-op for the patch to wrap and chain to.
+ */
+interface WorkspaceLeafPrototypeTestable {
+  onOpenTabHeaderMenu?(this: void, $event: MouseEvent, parentEl: HTMLElement): void;
 }
 
 let appMock: App;
@@ -46,6 +60,7 @@ describe('WorkspaceLeafOnOpenTabHeaderMenuPatchComponent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     appMock = App.createConfigured__();
+    castTo<WorkspaceLeafPrototypeTestable>(WorkspaceLeaf.prototype).onOpenTabHeaderMenu = noop;
   });
 
   afterEach(() => {
@@ -53,6 +68,7 @@ describe('WorkspaceLeafOnOpenTabHeaderMenuPatchComponent', () => {
     // Preventing cross-test prototype-patch leakage.
     loadedComponent?.unload();
     loadedComponent = undefined;
+    delete castTo<WorkspaceLeafPrototypeTestable>(WorkspaceLeaf.prototype).onOpenTabHeaderMenu;
     vi.restoreAllMocks();
   });
 

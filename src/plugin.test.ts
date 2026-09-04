@@ -97,15 +97,6 @@ const manifest: PluginManifest = {
   version: '1.0.0'
 };
 
-// The subset of `App` the dev-utils Notebook Navigator bridge reads on layout-ready.
-interface AppWithPlugins {
-  plugins: PluginRegistryLike;
-}
-
-interface PluginRegistryLike {
-  getPlugin(this: void, id: string): unknown;
-}
-
 let app: AppOriginal;
 let loadedPlugin: Plugin | undefined;
 
@@ -116,9 +107,6 @@ describe('Plugin', () => {
     appMock.workspace.onLayoutReady = vi.fn((callback: () => void) => {
       callback();
     });
-    // Since obsidian-dev-utils 89.0.0 the base bridges its command handlers into Notebook Navigator's
-    // Menus, which looks the plugin up on layout-ready — so `plugins` has to answer on the strict mock.
-    castTo<AppWithPlugins>(appMock).plugins = { getPlugin: vi.fn().mockReturnValue(null) };
     app = appMock.asOriginalType__();
   });
 

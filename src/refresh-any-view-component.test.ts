@@ -5,7 +5,10 @@ import type {
   WorkspaceLeaf as WorkspaceLeafOriginal
 } from 'obsidian';
 
-import { noopAsync } from 'obsidian-dev-utils/function';
+import {
+  noop,
+  noopAsync
+} from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import {
@@ -95,6 +98,17 @@ interface ViewStubMembers {
   getViewType?(): string;
 }
 
+/**
+ * The prototype slot this component patches.
+ *
+ * obsidian-test-mocks 5 removed its `onOpenTabHeaderMenu` bridge, which was an inert no-op with nothing
+ * behind it, so reading it throws again. Obsidian really does have the method and this component really
+ * does patch it, so the tests supply the same no-op for the patch to wrap and chain to.
+ */
+interface WorkspaceLeafPrototypeTestable {
+  onOpenTabHeaderMenu?(this: void, $event: MouseEvent, parentEl: HTMLElement): void;
+}
+
 let app: AppOriginal;
 let appMock: App;
 let loadedComponent: RefreshAnyViewComponent | undefined;
@@ -118,6 +132,7 @@ describe('RefreshAnyViewComponent', () => {
     iterateAllLeaves = vi.fn();
 
     appMock = App.createConfigured__();
+    castTo<WorkspaceLeafPrototypeTestable>(WorkspaceLeaf.prototype).onOpenTabHeaderMenu = noop;
     appMock.workspace.onLayoutReady = castTo<typeof appMock.workspace.onLayoutReady>(onLayoutReady);
     appMock.workspace.on = castTo<typeof appMock.workspace.on>(onWorkspace);
     appMock.workspace.getActiveViewOfType = castTo<typeof appMock.workspace.getActiveViewOfType>(getActiveViewOfType);
@@ -136,6 +151,7 @@ describe('RefreshAnyViewComponent', () => {
     // `WorkspaceLeaf.prototype` is removed, preventing cross-test prototype-patch leakage.
     loadedComponent?.unload();
     loadedComponent = undefined;
+    delete castTo<WorkspaceLeafPrototypeTestable>(WorkspaceLeaf.prototype).onOpenTabHeaderMenu;
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
