@@ -32,7 +32,7 @@ This plugin re-renders any view **in place**, keeping your scroll position: from
 A copy of the vault ships with every release. You can access it via any of the following:
 
 1. Running the **Refresh Any View: Open demo vault** command.
-2. Downloading `refresh-preview-demo-vault-<version>.zip` (`<version>` is the release version) from the [Releases](https://github.com/mnaoumov/obsidian-refresh-any-view/releases).
+2. Downloading `refresh-preview-demo-vault.zip` from the [Releases](https://github.com/mnaoumov/obsidian-refresh-any-view/releases). It unzips into a single `refresh-preview-demo-vault-<version>` folder.
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
 
 ## What it does
