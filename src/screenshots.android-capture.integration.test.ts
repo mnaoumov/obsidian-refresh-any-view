@@ -166,7 +166,7 @@ function buildSubjectNote(): string {
  */
 async function findRefreshButton(): Promise<RefreshButtonProbe> {
   return await evalInObsidian({
-    async callback({ app, lib: { waitUntil }, subjectNotePath }) {
+    async callback({ app, lib: { pressKey, waitUntil }, subjectNotePath }) {
       const RENDER_TIMEOUT_IN_MILLISECONDS = 20_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
       const RESIZE_SETTLE_DELAY_IN_MILLISECONDS = 2000;
@@ -177,10 +177,8 @@ async function findRefreshButton(): Promise<RefreshButtonProbe> {
 
       // The palette shot 1 opened is STILL OPEN, and it covers the whole screen
       // On a phone — without this the frame is that palette again, captioned as
-      // Though it were the note. `pressKey` cannot do it here (it goes through
-      // Electron's `sendInputEvent`, which Android has no part of), so the key
-      // Goes to the `document` Obsidian's own key handling listens on.
-      document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }));
+      // Though it were the note.
+      await pressKey({ key: 'Escape' });
 
       await waitUntil({
         message: 'the command palette to close',
