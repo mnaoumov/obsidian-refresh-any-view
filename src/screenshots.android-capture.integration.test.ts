@@ -121,7 +121,7 @@ beforeAll(async () => {
   await evalInObsidian({
     async callback({ app, fontSizeInPixels, lib: { waitUntil }, subjectNotePath }) {
       // A closure runs inside ONE Appium execute/sync call, which WebDriver caps
-      // Around 30s, so every wait in here stays comfortably under it.
+      // around 30s, so every wait in here stays comfortably under it.
       const SETTLE_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1000;
 
@@ -134,7 +134,7 @@ beforeAll(async () => {
       });
 
       // Otherwise the frame carries the note's title twice: once as the inline
-      // Title Obsidian renders above it, once as its own `# Dashboard`.
+      // title Obsidian renders above it, once as its own `# Dashboard`.
       app.vault.setConfig('showInlineTitle', false);
       const inlineTitleApp: unknown = app;
       (inlineTitleApp as InlineTitleApp).updateInlineTitleDisplay();
@@ -159,8 +159,8 @@ describe('mobile store screenshots', () => {
 
   it('2 - the button the plugin adds to every view', async () => {
     // Second, because the button is a small icon in the corner and the frame
-    // Leans on its caption to point at it. A phone has no hover, so unlike the
-    // Desktop set there is no tooltip to raise beside it.
+    // leans on its caption to point at it. A phone has no hover, so unlike the
+    // desktop set there is no tooltip to raise beside it.
     const probe = await findRefreshButton();
     expect(probe).toMatchObject({ hasButton: true, hasOpenPrompt: false });
     await shoot(2, 'And a refresh button in every view, top right');
@@ -202,12 +202,12 @@ async function findRefreshButton(): Promise<RefreshButtonProbe> {
       const RESIZE_SETTLE_DELAY_IN_MILLISECONDS = 2000;
 
       // Let the previous shot's capture settle: the device-metrics override it
-      // Sets and clears disturbs anything driven too soon afterwards.
+      // sets and clears disturbs anything driven too soon afterwards.
       await sleep(RESIZE_SETTLE_DELAY_IN_MILLISECONDS);
 
       // The palette shot 1 opened is STILL OPEN, and it covers the whole screen
-      // On a phone — without this the frame is that palette again, captioned as
-      // Though it were the note.
+      // on a phone — without this the frame is that palette again, captioned as
+      // though it were the note.
       await pressKey({ key: 'Escape' });
 
       await waitUntil({
@@ -230,7 +230,7 @@ async function findRefreshButton(): Promise<RefreshButtonProbe> {
 
       // Obsidian keeps a view's earlier header in the document at zero size, so
       // A query can hand back an invisible copy of the button: the assertion
-      // Would pass against something the frame does not show.
+      // would pass against something the frame does not show.
       function isOnScreen(element: Element): boolean {
         return element.getBoundingClientRect().width > 0;
       }
@@ -241,8 +241,8 @@ async function findRefreshButton(): Promise<RefreshButtonProbe> {
       }
 
       // Waiting for the PLUGIN'S button, not merely for the toolbar: the plugin
-      // Adds its icon a moment after the view renders, and looking before that
-      // Finds an empty-handed toolbar and reports the button missing.
+      // adds its icon a moment after the view renders, and looking before that
+      // finds an empty-handed toolbar and reports the button missing.
       await waitUntil({
         message: 'the refresh button to be added to the toolbar',
         predicate: () => Boolean(findButton()),
@@ -252,14 +252,14 @@ async function findRefreshButton(): Promise<RefreshButtonProbe> {
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
       // Found by the label Obsidian puts on it rather than by icon class: the
-      // Icon is a lucide name that a version bump can rename, while the label is
-      // The plugin's own and is what a reader recognizes.
+      // icon is a lucide name that a version bump can rename, while the label is
+      // the plugin's own and is what a reader recognizes.
       const button = findButton();
 
       return {
         hasButton: Boolean(button),
         // Reported so the shot FAILS rather than quietly photographing an
-        // Overlay left behind by the shot before it.
+        // overlay left behind by the shot before it.
         hasOpenPrompt: Boolean(document.querySelector('.prompt')),
         label: button?.getAttribute('aria-label') ?? null
       };
@@ -303,13 +303,13 @@ async function openCommandPalette(query: string): Promise<string[]> {
 
       input.value = text;
       // The palette filters from its own `input` handler, so setting `value`
-      // Alone would leave every command in the vault on screen.
+      // alone would leave every command in the vault on screen.
       input.dispatchEvent(new Event('input'));
 
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
       // Reported so the shot can assert the plugin's own commands are the ones
-      // On screen, rather than whatever else matched the word.
+      // on screen, rather than whatever else matched the word.
       return Object.values(app.commands.commands)
         .filter((command) => command.id.startsWith(`${pluginId}:`))
         .map((command) => command.name);
@@ -385,8 +385,8 @@ function vaultPath(): string {
  */
 async function writeFrame(index: number, caption: string, captured: Uint8Array): Promise<void> {
   // The AVD is 900x1600, so the device frame IS the store size. Asserting it
-  // Here is what keeps that true: run this against any other AVD and it fails
-  // Loudly instead of quietly shipping an off-spec image.
+  // here is what keeps that true: run this against any other AVD and it fails
+  // loudly instead of quietly shipping an off-spec image.
   expect(readPngDimensions(captured)).toStrictEqual({
     heightInPixels: HEIGHT_IN_PIXELS,
     widthInPixels: WIDTH_IN_PIXELS

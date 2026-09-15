@@ -48,7 +48,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
               componentToPluginSettingsValueConverter: (value: string) => getEnumValue(AutoRefreshMode, value),
               onChanged: () => {
                 // The interval row's `visible` predicate reads the mode, so Obsidian only has to
-                // Re-evaluate the predicates in place — no re-render.
+                // re-evaluate the predicates in place — no re-render.
                 this.refreshDomState();
               },
               pluginSettingsToComponentValueConverter: (value: AutoRefreshMode) => getEnumKey(AutoRefreshMode, value),

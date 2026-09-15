@@ -15,7 +15,7 @@ export const configs: Linter.Config[] = defineEslintConfigs({
               'Live Preview'
             ],
             // Exempt placeholders that list newline-separated lowercase Obsidian view-type
-            // Identifiers (`markdown\ncanvas`, `file-explorer\nsearch`) — they must stay lowercase.
+            // identifiers (`markdown\ncanvas`, `file-explorer\nsearch`) — they must stay lowercase.
             ignoreRegex: [
               String.raw`^[a-z][a-z-]*(?:\n[a-z][a-z-]*)+$`
             ]
