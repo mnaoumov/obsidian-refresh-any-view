@@ -48,7 +48,7 @@ vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', 
 }));
 
 // `PluginDataHandler` and `PluginEventSourceImpl` are NOT stubbed: since obsidian-dev-utils 93.2 the base
-// Builds its own settings component out of them during `onload`, and that component really calls
+// builds its own settings component out of them during `onload`, and that component really calls
 // `pluginEventSource.on`, so a bare `vi.fn()` double makes the base throw before `onloadImpl` runs.
 
 // The plugin's OWN sibling modules (allowed doubles). `PluginSettingsComponent` and
@@ -124,7 +124,7 @@ describe('Plugin', () => {
 
     for (const HandlerClass of [RefreshActiveViewCommandHandler, RefreshAllVisibleViewsCommandHandler, RefreshAllOpenViewsCommandHandler]) {
       // Since obsidian-dev-utils 89.0.0 the factory runs once per menu surface, so a handler is
-      // Constructed more than once by design.
+      // constructed more than once by design.
       expect(vi.mocked(HandlerClass)).toHaveBeenCalled();
       const params = castTo<RefreshAnyViewComponentHolder>(vi.mocked(HandlerClass).mock.calls[0]?.[0]);
       expect(params.refreshAnyViewComponent).toBe(refreshAnyViewComponent);
@@ -145,7 +145,7 @@ describe('Plugin', () => {
 });
 
 // `registerCommandHandlers` takes a factory since obsidian-dev-utils 89.0.0, and the base registers its
-// Own handlers through the same spy — so pick the plugin's own factory by what it builds.
+// own handlers through the same spy — so pick the plugin's own factory by what it builds.
 function buildPluginCommandHandlers(): CommandHandler[] {
   const commandHandlerBatches = vi.mocked(CommandHandlerComponent.prototype.registerCommandHandlers).mock.calls
     .map(([commandHandlerFactory]) => commandHandlerFactory());

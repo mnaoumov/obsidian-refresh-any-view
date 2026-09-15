@@ -94,7 +94,7 @@ beforeAll(async () => {
       });
 
       // The note is the subject; the file explorer and an empty right dock would
-      // Otherwise take a third of a 1200x800 frame.
+      // otherwise take a third of a 1200x800 frame.
       app.workspace.leftSplit.collapse();
       const rightSplit: unknown = app.workspace.rightSplit;
       (rightSplit as ResizableSideDock).setSize(0);
@@ -120,9 +120,9 @@ describe('desktop store screenshots', () => {
 
   it('2 - the button the plugin adds to every view', async () => {
     // Second, because the button is a small icon in the corner and the frame
-    // Leans on its caption to point at it. Obsidian raises its tooltips from its
-    // Own hover handling, which a dispatched hover does not wake, so there is no
-    // Label in frame to carry it.
+    // leans on its caption to point at it. Obsidian raises its tooltips from its
+    // own hover handling, which a dispatched hover does not wake, so there is no
+    // label in frame to carry it.
     const probe = await hoverRefreshButton();
     expect(probe).toMatchObject({ hasButton: true });
     await shoot(2, 'And a refresh button in every view, top right');
@@ -167,8 +167,8 @@ async function hoverRefreshButton(): Promise<unknown> {
       });
 
       // Waiting for the PLUGIN'S button, not merely for the toolbar: the plugin
-      // Adds its icon a moment after the view renders, and looking before that
-      // Found an empty-handed toolbar and reported the button missing.
+      // adds its icon a moment after the view renders, and looking before that
+      // found an empty-handed toolbar and reported the button missing.
       await waitUntil({
         message: 'the refresh button to be added to the toolbar',
         predicate: () =>
@@ -178,8 +178,8 @@ async function hoverRefreshButton(): Promise<unknown> {
       });
 
       // Found by the tooltip Obsidian puts on it rather than by icon class: the
-      // Icon is a lucide name that a version bump can rename, while the label is
-      // The plugin's own and is what a reader recognizes.
+      // icon is a lucide name that a version bump can rename, while the label is
+      // the plugin's own and is what a reader recognizes.
       const button = [...document.querySelectorAll('.view-actions .clickable-icon')]
         .find((candidate) => (candidate.getAttribute('aria-label') ?? '').toLowerCase().includes('refresh'));
 
@@ -213,7 +213,7 @@ async function openCommandPalette(query: string): Promise<string[]> {
       const RESIZE_SETTLE_DELAY_IN_MILLISECONDS = 2000;
 
       // Let the previous shot's capture settle: the device-metrics override it
-      // Sets and clears tears down anything opened too soon afterwards.
+      // sets and clears tears down anything opened too soon afterwards.
       await sleep(RESIZE_SETTLE_DELAY_IN_MILLISECONDS);
 
       // Over the note rather than an empty tab: the palette is the subject, but
@@ -238,13 +238,13 @@ async function openCommandPalette(query: string): Promise<string[]> {
 
       input.value = text;
       // The palette filters from its own `input` handler, so setting `value`
-      // Alone would leave every command in the vault on screen.
+      // alone would leave every command in the vault on screen.
       input.dispatchEvent(new Event('input'));
 
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
       // Reported so the shot can assert the plugin's own commands are the ones
-      // On screen, rather than whatever else matched the word.
+      // on screen, rather than whatever else matched the word.
       return Object.values(app.commands.commands)
         .filter((command) => command.id.startsWith(`${pluginId}:`))
         .map((command) => command.name);

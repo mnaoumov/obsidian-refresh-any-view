@@ -7,7 +7,7 @@ import {
 } from 'obsidian-dev-utils/obsidian/community-plugins';
 
 // The plugin's manifest id is `refresh-preview`, not the repo name — commands and `data.json` are
-// Keyed by it.
+// keyed by it.
 const PLUGIN_ID = 'refresh-preview';
 const DATAVIEW_PLUGIN_ID = 'dataview';
 

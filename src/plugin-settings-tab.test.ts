@@ -43,9 +43,9 @@ beforeEach(() => {
   app = App.createConfigured__().asOriginalType__();
   settings = new PluginSettings();
   // The real `bind` is exercised by `obsidian-dev-utils`'s own tests. Here we only need to observe
-  // That the tab wires each component to the correct setting key, so we stub its return value
+  // that the tab wires each component to the correct setting key, so we stub its return value
   // (an allowed test double): the real test-mocks components are strict proxies that throw on the
-  // Duck-typing probes inside the real `bind`.
+  // duck-typing probes inside the real `bind`.
   vi.spyOn(PluginSettingsTabBase.prototype, 'bind').mockImplementation((params) => params.valueComponent);
 });
 
@@ -121,7 +121,7 @@ function createTab(): PluginSettingsTab {
   });
   const tab = new PluginSettingsTab({ plugin, pluginSettingsComponent });
   // The dropdown's `onChanged` asks Obsidian to re-evaluate the `visible` predicates in place; there is no
-  // Rendered tab in a unit test, so neutralize it.
+  // rendered tab in a unit test, so neutralize it.
   tab.refreshDomState = vi.fn();
   return tab;
 }

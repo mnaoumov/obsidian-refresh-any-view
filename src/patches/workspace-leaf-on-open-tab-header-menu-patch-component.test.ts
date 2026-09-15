@@ -34,7 +34,7 @@ interface MenuItemTestable {
 
 interface MenuTestable {
   // `menuItems__`, not `items`: since obsidian-test-mocks 3.11.0 the latter also holds separators, and
-  // Every read here is of a member only a MenuItem has.
+  // every read here is of a member only a MenuItem has.
   menuItems__: MenuItemTestable[];
 }
 
@@ -65,7 +65,7 @@ describe('WorkspaceLeafOnOpenTabHeaderMenuPatchComponent', () => {
 
   afterEach(() => {
     // Unload the component so the real monkey-around patch on `WorkspaceLeaf.prototype` is removed,
-    // Preventing cross-test prototype-patch leakage.
+    // preventing cross-test prototype-patch leakage.
     loadedComponent?.unload();
     loadedComponent = undefined;
     delete castTo<WorkspaceLeafPrototypeTestable>(WorkspaceLeaf.prototype).onOpenTabHeaderMenu;

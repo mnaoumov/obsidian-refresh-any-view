@@ -37,7 +37,7 @@ import {
 import { RefreshAnyViewComponent } from './refresh-any-view-component.ts';
 
 // `getCacheSafe` and `isFile` are dev-utils utilities. Stubbing their RETURN VALUE (not their algorithm)
-// Is an allowed test double — the component's branches that depend on them are what we exercise.
+// is an allowed test double — the component's branches that depend on them are what we exercise.
 const mockGetCacheSafe = vi.fn((): Promise<undefined> => Promise.resolve(undefined));
 vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => ({
   ...await importOriginal<typeof import('obsidian-dev-utils/obsidian/metadata-cache')>(),
@@ -51,7 +51,7 @@ vi.mock('obsidian-dev-utils/obsidian/file-system', async (importOriginal) => ({
 }));
 
 // The component's OWN settings collaborator. It is passed via the constructor (not `addChild`ed), so a
-// Strict-proxy stub carrying a controllable `settings` object and an `on` method that captures the
+// strict-proxy stub carrying a controllable `settings` object and an `on` method that captures the
 // `saveSettings` callback is sufficient.
 const mockSettings = new PluginSettings();
 let capturedSaveSettingsCallback: (() => Promise<void>) | undefined;
@@ -61,7 +61,7 @@ const onSaveSettings = vi.fn((_name: string, callback: () => Promise<void>) => {
 });
 
 // The test-mocks view classes are runtime-concrete but typed `abstract` (mirroring Obsidian). Cast to a
-// Concrete constructor so the test can instantiate real instances for the source's `instanceof` checks.
+// concrete constructor so the test can instantiate real instances for the source's `instanceof` checks.
 const TextFileViewClass = castTo<new (leaf: WorkspaceLeaf) => TextFileView>(TextFileView);
 const MarkdownViewClass = castTo<new (leaf: WorkspaceLeaf) => MarkdownView>(MarkdownView);
 const FileViewClass = castTo<new (leaf: WorkspaceLeaf) => FileView>(FileView);

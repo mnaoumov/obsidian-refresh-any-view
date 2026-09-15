@@ -82,8 +82,8 @@ describe('RefreshActiveViewCommandHandler', () => {
 
     it('should be a no-op when the active view disappears before execute runs', async () => {
       // `checkCallback` guards `execute` behind `canExecute`, so the `if (view)` guard inside `execute`
-      // Is only reachable if the active view vanishes between the two calls. Invoke the handler's own
-      // Protected `execute` directly to cover that defensive branch.
+      // is only reachable if the active view vanishes between the two calls. Invoke the handler's own
+      // protected `execute` directly to cover that defensive branch.
       const refreshView = vi.fn((_view: View): Promise<void> => noopAsync());
       const handler = new RefreshActiveViewCommandHandler({
         refreshAnyViewComponent: createRefreshAnyViewComponentStub({
