@@ -74,28 +74,28 @@ type AddActionFunction = (icon: string, title: string, callback: () => void) => 
 interface LeafStubSpec {
   isDeferred?: boolean;
   isVisible?: boolean;
-  loadIfDeferred?(): Promise<void>;
-  rebuildView?(): Promise<void>;
+  loadIfDeferred?: () => Promise<void>;
+  rebuildView?: () => Promise<void>;
   view?: ViewOriginal;
 }
 
 interface Testable {
-  canAutoRefreshView(view: ViewOriginal): boolean;
-  executeKeepingFocus(callback: () => Promise<void>): Promise<void>;
-  handleLayoutChange(): void;
-  handleModify(file: TAbstractFile): void;
-  isMatchingAutoRefreshMode(view: ViewOriginal): boolean;
-  isVisibleView(view: ViewOriginal): boolean;
-  loadDeferredViews(): Promise<void>;
-  onLayoutReady(): Promise<void>;
-  refreshViews(checkView: (view: ViewOriginal) => boolean): Promise<void>;
-  registerAutoRefreshTimer(): void;
+  canAutoRefreshView: (view: ViewOriginal) => boolean;
+  executeKeepingFocus: (callback: () => Promise<void>) => Promise<void>;
+  handleLayoutChange: () => void;
+  handleModify: (file: TAbstractFile) => void;
+  isMatchingAutoRefreshMode: (view: ViewOriginal) => boolean;
+  isVisibleView: (view: ViewOriginal) => boolean;
+  loadDeferredViews: () => Promise<void>;
+  onLayoutReady: () => Promise<void>;
+  refreshViews: (checkView: (view: ViewOriginal) => boolean) => Promise<void>;
+  registerAutoRefreshTimer: () => void;
 }
 
 interface ViewStubMembers {
   containerEl?: HTMLElement;
-  getMode?(): string;
-  getViewType?(): string;
+  getMode?: () => string;
+  getViewType?: () => string;
 }
 
 /**
@@ -106,7 +106,7 @@ interface ViewStubMembers {
  * does patch it, so the tests supply the same no-op for the patch to wrap and chain to.
  */
 interface WorkspaceLeafPrototypeTestable {
-  onOpenTabHeaderMenu?(this: void, $event: MouseEvent, parentEl: HTMLElement): void;
+  onOpenTabHeaderMenu?: (this: void, $event: MouseEvent, parentEl: HTMLElement) => void;
 }
 
 let app: AppOriginal;
@@ -701,7 +701,7 @@ describe('RefreshAnyViewComponent', () => {
 // --- Helpers ---
 
 interface CodeMirrorStub {
-  dispatch(): void;
+  dispatch: () => void;
   scrollDOM: ScrollDomStub;
   state: EditorStateStub;
 }
@@ -718,7 +718,7 @@ interface EditorStateStub {
 interface FileViewAugment {
   containerEl: HTMLElement;
   file: unknown;
-  getViewType(): string;
+  getViewType: () => string;
   leaf: WorkspaceLeafOriginal;
 }
 
@@ -734,7 +734,7 @@ interface GenericViewSpec extends ViewStubMembers {
 interface ItemViewAugment {
   addAction: AddActionFunction;
   containerEl: HTMLElement;
-  getViewType(): string;
+  getViewType: () => string;
   leaf: WorkspaceLeafOriginal;
 }
 
@@ -758,15 +758,15 @@ interface MarkdownViewAugment {
 }
 
 interface MarkdownViewSpec {
-  dispatch?(): void;
+  dispatch?: () => void;
   file?: unknown;
   mode: string;
-  rerender?(): void;
+  rerender?: () => void;
   viewType?: string;
 }
 
 interface PreviewModeStub {
-  rerender(): void;
+  rerender: () => void;
 }
 
 interface ScrollDomStub {
@@ -777,12 +777,12 @@ interface TextFileViewAugment {
   containerEl: HTMLElement;
   dirty: boolean;
   leaf: WorkspaceLeafOriginal;
-  save(): Promise<void>;
+  save: () => Promise<void>;
 }
 
 interface TextFileViewSpec {
   dirty: boolean;
-  save(): Promise<void>;
+  save: () => Promise<void>;
 }
 
 function asyncNoop(): Promise<void> {
