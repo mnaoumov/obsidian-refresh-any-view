@@ -29,7 +29,7 @@ import type { RefreshAnyViewComponent } from '../refresh-any-view-component.ts';
 import { WorkspaceLeafOnOpenTabHeaderMenuPatchComponent } from './workspace-leaf-on-open-tab-header-menu-patch-component.ts';
 
 interface MenuItemTestable {
-  onClick__?($event: unknown): void;
+  onClick__?: ($event: unknown) => void;
 }
 
 interface MenuTestable {
@@ -39,7 +39,7 @@ interface MenuTestable {
 }
 
 interface RefreshAnyViewComponentStubSpec {
-  refreshView?(view: ViewOriginal): Promise<void>;
+  refreshView?: (view: ViewOriginal) => Promise<void>;
 }
 
 /**
@@ -50,7 +50,7 @@ interface RefreshAnyViewComponentStubSpec {
  * does patch it, so the tests supply the same no-op for the patch to wrap and chain to.
  */
 interface WorkspaceLeafPrototypeTestable {
-  onOpenTabHeaderMenu?(this: void, $event: MouseEvent, parentEl: HTMLElement): void;
+  onOpenTabHeaderMenu?: (this: void, $event: MouseEvent, parentEl: HTMLElement) => void;
 }
 
 let appMock: App;

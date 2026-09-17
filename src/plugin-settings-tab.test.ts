@@ -26,13 +26,13 @@ import {
 } from './plugin-settings.ts';
 
 interface DropdownBindOptions {
-  componentToPluginSettingsValueConverter(value: string): AutoRefreshMode;
-  onChanged(newValue: AutoRefreshMode): void;
-  pluginSettingsToComponentValueConverter(value: AutoRefreshMode): string;
+  readonly componentToPluginSettingsValueConverter: (value: string) => AutoRefreshMode;
+  readonly onChanged: (newValue: AutoRefreshMode) => void;
+  readonly pluginSettingsToComponentValueConverter: (value: AutoRefreshMode) => string;
 }
 
 interface VisibleRow {
-  visible(): boolean;
+  visible: () => boolean;
 }
 
 let app: AppOriginal;
