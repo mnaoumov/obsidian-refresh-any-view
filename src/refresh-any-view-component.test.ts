@@ -743,24 +743,31 @@ interface ItemViewSpec {
   leaf?: WorkspaceLeafOriginal;
 }
 
+interface MarkdownEditModeStub {
+  editor: MarkdownEditorStub;
+}
+
 interface MarkdownEditorStub {
   cm: CodeMirrorStub;
 }
 
 interface MarkdownViewAugment {
   containerEl: HTMLElement;
+  currentMode: unknown;
   dirty: boolean;
-  editor: MarkdownEditorStub;
+  editMode: MarkdownEditModeStub;
   file: unknown;
   leaf: WorkspaceLeafOriginal;
-  mode: string;
+  modes: Record<MarkdownViewMode, unknown>;
   previewMode: PreviewModeStub;
 }
+
+type MarkdownViewMode = 'preview' | 'source';
 
 interface MarkdownViewSpec {
   dispatch?: () => void;
   file?: unknown;
-  mode: string;
+  mode: MarkdownViewMode;
   rerender?: () => void;
   viewType?: string;
 }
@@ -839,12 +846,14 @@ function createMarkdownView(spec: MarkdownViewSpec, leaf: WorkspaceLeafOriginal)
   const view = new MarkdownViewClass(realLeaf());
   const augmented = castTo<MarkdownViewAugment>(view);
   augmented.dirty = false;
-  augmented.mode = spec.mode;
+  // `getMode()` reads `currentMode.type`, as in Obsidian, so switch the mode the view is in rather than a flag.
+  augmented.currentMode = augmented.modes[spec.mode];
   augmented.file = spec.file ?? null;
   augmented.containerEl = createScrollEl();
   augmented.leaf = leaf;
   augmented.previewMode = { rerender: spec.rerender ?? vi.fn() };
-  augmented.editor = {
+  // `MarkdownView.editor` is a getter over `editMode.editor`, as in Obsidian, so the stub goes where it reads.
+  augmented.editMode.editor = {
     cm: {
       dispatch: spec.dispatch ?? vi.fn(),
       scrollDOM: { scrollTop: 0 },
