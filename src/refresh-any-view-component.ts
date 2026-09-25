@@ -181,11 +181,7 @@ export class RefreshAnyViewComponent extends LayoutReadyComponent {
 
   private handleLayoutChange(): void {
     const itemView = this.app.workspace.getActiveViewOfType(ItemView);
-    if (!itemView) {
-      return;
-    }
-
-    if (this.itemViews.has(itemView)) {
+    if (!itemView || this.itemViews.has(itemView)) {
       return;
     }
     this.itemViews.add(itemView);
@@ -198,11 +194,7 @@ export class RefreshAnyViewComponent extends LayoutReadyComponent {
   }
 
   private handleModify(file: TAbstractFile): void {
-    if (!this.pluginSettingsComponent.settings.shouldAutoRefreshOnFileChange) {
-      return;
-    }
-
-    if (!isFile(file)) {
+    if (!this.pluginSettingsComponent.settings.shouldAutoRefreshOnFileChange || !isFile(file)) {
       return;
     }
 
