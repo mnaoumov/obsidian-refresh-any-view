@@ -150,9 +150,23 @@ function buildSubjectNote(): string {
  */
 async function hoverRefreshButton(): Promise<unknown> {
   return await evalInObsidian({
-    async callback({ app, lib: { hoverElement, waitUntil }, subjectNotePath }) {
+    async callback({ app, lib: { hoverElement, pressKey, waitUntil }, subjectNotePath }) {
       const RENDER_TIMEOUT_IN_MILLISECONDS = 20_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
+
+      // The previous shot leaves its command palette open, and a modal over the
+      // toolbar takes the hover meant for the button. This frame used to be shot
+      // with the palette still on screen, because the hover resolved quietly.
+      if (document.querySelector('.modal-container')) {
+        // A modal closes on the next frame; this is headroom, not an expectation.
+        const CLOSE_TIMEOUT_IN_MILLISECONDS = 3000;
+        await pressKey({ key: 'Escape' });
+        await waitUntil({
+          message: 'the command palette to close',
+          predicate: () => !document.querySelector('.modal-container'),
+          timeoutInMilliseconds: CLOSE_TIMEOUT_IN_MILLISECONDS
+        });
+      }
 
       const file = app.vault.getFileByPath(subjectNotePath);
       if (!file) {
