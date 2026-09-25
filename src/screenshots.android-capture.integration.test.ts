@@ -36,7 +36,9 @@ import {
   captureDeviceScreenshot,
   captureObsidianScreenshot,
   evalInObsidian,
+  hideCaret,
   labelScreenshot,
+  paintOutStatusBar,
   raiseSoftKeyboard,
   readPngDimensions,
   resolveEmulatorDeviceId,
@@ -107,6 +109,13 @@ const AVD_NAME = 'obsidian_screenshots';
  * palette renders `.prompt input`, which is not the `.prompt-input` a suggester renders.
  */
 const PALETTE_INPUT_SELECTOR = '.prompt input';
+
+/**
+ * The status bar's height on the `obsidian_screenshots` AVD, in framebuffer pixels: 24dp at density 320.
+ * Measured on a frame, not derived. The harness refuses to paint a band whose bottom row is not one flat
+ * color, so a stale number fails the capture rather than painting over the app.
+ */
+const STATUS_BAR_HEIGHT_IN_PIXELS = 48;
 
 let deviceId = '';
 
@@ -347,10 +356,16 @@ async function shoot(index: number, caption: string): Promise<void> {
  * so `raiseSoftKeyboard` lands a real touch on the field and then proves geometrically that it lifted,
  * because nothing in the page reports the keyboard.
  *
- * The trade, which applies only to the shots that switch: a device capture is **not** byte-reproducible,
- * because the status-bar clock and the battery indicator are in it. A shot with no focused field keeps
- * {@link shoot} and stays reproducible — a real phone shows no keyboard there either, so raising one
- * would make that frame less true rather than more.
+ * A device capture carries three things that change between runs, and each is removed where it arises:
+ * - The status bar's clock and battery. `paintOutStatusBar` fills the band with the background under it,
+ *   after checking the band holds nothing of the app.
+ * - The blinking caret. `hideCaret` makes it transparent for the capture, since the device route has no
+ *   page channel to do it by itself, and blurring would take the keyboard down with the focus.
+ * - Gboard's suggestion strip, which raced between its toolbar and word predictions that differ from one
+ *   run to the next. `raiseSoftKeyboard` parks the caret at offset 0, so the strip is always the toolbar.
+ *
+ * A shot with no focused field keeps {@link shoot}: a real phone shows no keyboard there either, so raising
+ * one would make that frame less true rather than more.
  *
  * @param index - The 1-based listing position.
  * @param caption - The caption drawn across the bottom of the frame.
@@ -364,12 +379,17 @@ async function shootWithSoftKeyboard(index: number, caption: string): Promise<vo
         vaultPath: vaultPath()
       });
 
-      return await captureDeviceScreenshot({ deviceId });
+      const caret = await hideCaret({ vaultPath: vaultPath() });
+      try {
+        return await captureDeviceScreenshot({ deviceId });
+      } finally {
+        await caret.restore();
+      }
     },
     deviceId
   });
 
-  await writeFrame(index, caption, captured);
+  await writeFrame(index, caption, await paintOutStatusBar(captured, { heightInPixels: STATUS_BAR_HEIGHT_IN_PIXELS }));
 }
 
 function vaultPath(): string {
