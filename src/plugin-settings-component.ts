@@ -26,9 +26,11 @@ export class PluginSettingsComponent extends PluginSettingsComponentBase<PluginS
   protected override async onLoadRecord(record: GenericObject): Promise<void> {
     await super.onLoadRecord(record);
     const settings = record as Partial<LegacySettings>;
-    if (settings.autoRefreshOnFileChange !== undefined) {
-      settings.shouldAutoRefreshOnFileChange = settings.autoRefreshOnFileChange;
-      delete settings.autoRefreshOnFileChange;
+    if (settings.autoRefreshOnFileChange === undefined) {
+      return;
     }
+
+    settings.shouldAutoRefreshOnFileChange = settings.autoRefreshOnFileChange;
+    delete settings.autoRefreshOnFileChange;
   }
 }
