@@ -8,9 +8,9 @@ import type {
 import {
   noop,
   noopAsync
-} from 'obsidian-dev-utils/function';
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+} from '@mnaoumov/typescript-lib/function';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   App,
   FileView,
@@ -39,14 +39,14 @@ import { RefreshAnyViewComponent } from './refresh-any-view-component.ts';
 // `getCacheSafe` and `isFile` are dev-utils utilities. Stubbing their RETURN VALUE (not their algorithm)
 // is an allowed test double — the component's branches that depend on them are what we exercise.
 const mockGetCacheSafe = vi.fn((): Promise<undefined> => Promise.resolve(undefined));
-vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => ({
-  ...await importOriginal<typeof import('obsidian-dev-utils/obsidian/metadata-cache')>(),
+vi.mock('@mnaoumov/obsidian-lib/metadata-cache', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@mnaoumov/obsidian-lib/metadata-cache')>(),
   getCacheSafe: (...$arguments: unknown[]): Promise<undefined> => mockGetCacheSafe(...castTo<[]>($arguments))
 }));
 
 const mockIsFile = vi.fn((_file: unknown): boolean => true);
-vi.mock('obsidian-dev-utils/obsidian/file-system', async (importOriginal) => ({
-  ...await importOriginal<typeof import('obsidian-dev-utils/obsidian/file-system')>(),
+vi.mock('@mnaoumov/obsidian-lib/file-system', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@mnaoumov/obsidian-lib/file-system')>(),
   isFile: (file: unknown): boolean => mockIsFile(file)
 }));
 

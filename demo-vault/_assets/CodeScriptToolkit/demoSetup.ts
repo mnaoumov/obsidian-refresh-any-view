@@ -5,10 +5,6 @@ import {
   configureCommunityPlugin,
   installConfigureEnableCommunityPlugin
 } from 'obsidian-dev-utils/obsidian/community-plugins';
-import {
-  asCodeBlock,
-  createFragmentWithCodeBlocks
-} from 'obsidian-dev-utils/obsidian/html-element';
 
 // The plugin's manifest id is `refresh-preview`, not the repo name — commands and `data.json` are
 // keyed by it.
@@ -49,11 +45,9 @@ export async function changeSettings(app: App, patch: DemoSettingsPatch): Promis
  * enable it.
  */
 export async function installDataview(app: App): Promise<void> {
-  new Notice(createFragmentWithCodeBlocks(`Installing ${asCodeBlock(DATAVIEW_PLUGIN_NAME)}...`));
+  new Notice(createPluginNameFragment('Installing ', '...'));
   await installConfigureEnableCommunityPlugin({ app, pluginId: DATAVIEW_PLUGIN_ID });
-  new Notice(createFragmentWithCodeBlocks(
-    `${asCodeBlock(DATAVIEW_PLUGIN_NAME)} is enabled. Switch this note to Reading mode to see a live timestamp.`
-  ));
+  new Notice(createPluginNameFragment('', ' is enabled. Switch this note to Reading mode to see a live timestamp.'));
 }
 
 /**
@@ -64,4 +58,16 @@ export async function installDataview(app: App): Promise<void> {
  */
 export function refreshActiveView(app: App): void {
   app.commands.executeCommandById(`${PLUGIN_ID}:refresh-active-view`);
+}
+
+/**
+ * Builds a notice that shows `Dataview`'s name as code. Built by hand rather than with the library's
+ * html-element helpers, because the copy `CodeScript Toolkit` serves to vault scripts does not export them.
+ */
+function createPluginNameFragment(prefix: string, suffix: string): DocumentFragment {
+  return createFragment((fragment) => {
+    fragment.appendText(prefix);
+    fragment.createEl('code', { text: DATAVIEW_PLUGIN_NAME });
+    fragment.appendText(suffix);
+  });
 }

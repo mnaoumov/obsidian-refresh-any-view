@@ -1,5 +1,13 @@
 import type { App } from 'obsidian';
 
+import { registerAsyncEvent } from '@mnaoumov/obsidian-lib/components/async-events-component';
+import { LayoutReadyComponent } from '@mnaoumov/obsidian-lib/components/layout-ready-component';
+import { isFile } from '@mnaoumov/obsidian-lib/file-system';
+import { getCacheSafe } from '@mnaoumov/obsidian-lib/metadata-cache';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from '@mnaoumov/typescript-lib/async';
 import {
   FileView,
   ItemView,
@@ -9,14 +17,6 @@ import {
   View,
   WorkspaceLeaf
 } from 'obsidian';
-import {
-  convertAsyncToSync,
-  invokeAsyncSafely
-} from 'obsidian-dev-utils/async';
-import { registerAsyncEvent } from 'obsidian-dev-utils/obsidian/components/async-events-component';
-import { LayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
-import { isFile } from 'obsidian-dev-utils/obsidian/file-system';
-import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
 
 import type { PluginSettingsComponent } from './plugin-settings-component.ts';
 

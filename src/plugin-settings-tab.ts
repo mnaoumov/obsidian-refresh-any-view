@@ -1,11 +1,11 @@
 import type { SettingDefinitionItem } from 'obsidian';
 
+import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
+import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
 import {
   getEnumKey,
   getEnumValue
-} from 'obsidian-dev-utils/enum';
-import { appendCodeBlock } from 'obsidian-dev-utils/obsidian/html-element';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
+} from '@mnaoumov/typescript-lib/enum';
 
 import type { PluginSettings } from './plugin-settings.ts';
 
