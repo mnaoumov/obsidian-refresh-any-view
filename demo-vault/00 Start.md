@@ -1,6 +1,6 @@
 # Start here
 
-Welcome to the [Refresh Any View](https://github.com/mnaoumov/obsidian-refresh-any-view/) demo vault. Obsidian renders a view's content once, when the view opens - so a note showing a query result, an embed, or a rendered timestamp keeps showing its *original* render until you close and reopen it. **Refresh Any View** re-renders any view **in place**, without reopening it, and can even do it automatically.
+Welcome to the [Refresh Any View](https://github.com/mnaoumov/obsidian-refresh-any-view/) demo vault. Obsidian renders a view's content once, when the view opens - so a note showing a query result, an embed, or a rendered timestamp keeps showing its *original* render until you close and reopen it. `Refresh Any View` re-renders any view **in place**, without reopening it, and can even do it automatically.
 
 ## Your first minute
 
