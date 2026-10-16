@@ -1,14 +1,14 @@
+import type { CommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/command-handler';
+import type { DisposableEx } from '@mnaoumov/typescript-lib/disposable';
 import type {
   App as AppOriginal,
   PluginManifest
 } from 'obsidian';
-import type { DisposableEx } from 'obsidian-dev-utils/disposable';
-import type { CommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
-import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { CommandHandlerComponent } from '@mnaoumov/obsidian-lib/command-handlers/command-handler-component';
+import { OpenDemoVaultCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/open-demo-vault-command-handler';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   afterEach,
@@ -43,12 +43,11 @@ async function loadableComponentStub(): Promise<ReturnType<typeof vi.fn>> {
   });
 }
 
-vi.mock('obsidian-dev-utils/obsidian/components/plugin-settings-tab-component', async () => ({
+vi.mock('@mnaoumov/obsidian-lib/components/plugin-settings-tab-component', async () => ({
   PluginSettingsTabComponent: await loadableComponentStub()
 }));
 
-// `PluginDataHandler` and `PluginEventSourceImpl` are NOT stubbed: since obsidian-dev-utils 93.2 the base
-// builds its own settings component out of them during `onload`, and that component really calls
+// `PluginDataHandler` and `PluginEventSourceImpl` are NOT stubbed: the base builds its own settings component out of them during `onload`, and that component really calls
 // `pluginEventSource.on`, so a bare `vi.fn()` double makes the base throw before `onloadImpl` runs.
 
 // The plugin's OWN sibling modules (allowed doubles). `PluginSettingsComponent` and
@@ -81,7 +80,7 @@ vi.mock('./command-handlers/refresh-all-visible-views-command-handler.ts', () =>
   RefreshAllVisibleViewsCommandHandler: vi.fn()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler', () => ({
+vi.mock('@mnaoumov/obsidian-lib/command-handlers/open-demo-vault-command-handler', () => ({
   OpenDemoVaultCommandHandler: vi.fn()
 }));
 
@@ -123,7 +122,7 @@ describe('Plugin', () => {
     expect(refreshAnyViewComponent).toBeDefined();
 
     for (const HandlerClass of [RefreshActiveViewCommandHandler, RefreshAllVisibleViewsCommandHandler, RefreshAllOpenViewsCommandHandler]) {
-      // Since obsidian-dev-utils 89.0.0 the factory runs once per menu surface, so a handler is
+      // The factory runs once per menu surface, so a handler is
       // constructed more than once by design.
       expect(vi.mocked(HandlerClass)).toHaveBeenCalled();
       const params = castTo<RefreshAnyViewComponentHolder>(vi.mocked(HandlerClass).mock.calls[0]?.[0]);
@@ -144,7 +143,7 @@ describe('Plugin', () => {
   });
 });
 
-// `registerCommandHandlers` takes a factory since obsidian-dev-utils 89.0.0, and the base registers its
+// `registerCommandHandlers` takes a factory, and the base registers its
 // own handlers through the same spy — so pick the plugin's own factory by what it builds.
 function buildPluginCommandHandlers(): CommandHandler[] {
   const commandHandlerBatches = vi.mocked(CommandHandlerComponent.prototype.registerCommandHandlers).mock.calls

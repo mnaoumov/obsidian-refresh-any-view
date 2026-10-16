@@ -1,12 +1,12 @@
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from '@mnaoumov/typescript-lib/async';
 import {
   Menu,
   WorkspaceLeaf
 } from 'obsidian';
-import {
-  convertAsyncToSync,
-  invokeAsyncSafely
-} from 'obsidian-dev-utils/async';
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 
 import type { RefreshAnyViewComponent } from '../refresh-any-view-component.ts';
 

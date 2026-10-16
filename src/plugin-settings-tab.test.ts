@@ -1,15 +1,15 @@
+import type { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
+import type { GenericVoidFunction } from '@mnaoumov/typescript-lib/function';
 import type {
   App as AppOriginal,
   Plugin,
   SettingGroup
 } from 'obsidian';
-import type { GenericVoidFunction } from 'obsidian-dev-utils/function';
-import type { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
-import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
+import { SettingEx } from '@mnaoumov/obsidian-lib/setting-ex';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -42,7 +42,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
   app = App.createConfigured__().asOriginalType__();
   settings = new PluginSettings();
-  // The real `bind` is exercised by `obsidian-dev-utils`'s own tests. Here we only need to observe
+  // The real `bind` is exercised by `@mnaoumov/obsidian-lib`'s own tests. Here we only need to observe
   // that the tab wires each component to the correct setting key, so we stub its return value
   // (an allowed test double): the real test-mocks components are strict proxies that throw on the
   // duck-typing probes inside the real `bind`.
