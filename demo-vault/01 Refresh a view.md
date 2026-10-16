@@ -1,6 +1,6 @@
 # Refresh a view
 
-Obsidian renders a view once, when it opens. If the view shows **dynamic content** - a Dataview query, an embedded note, a rendered timestamp, output from another plugin - that content is frozen at first render and only updates when you close and reopen the view. **Refresh Any View** re-renders the view **in place** instead, preserving your scroll position.
+Obsidian renders a view once, when it opens. If the view shows **dynamic content** - a `Dataview` query, an embedded note, a rendered timestamp, output from another plugin - that content is frozen at first render and only updates when you close and reopen the view. `Refresh Any View` re-renders the view **in place** instead, preserving your scroll position.
 
 ## Ways to refresh
 
@@ -25,9 +25,9 @@ The plugin gives you a toolbar button and three commands:
 
 ## Watch something actually go stale
 
-The refresh commands work on any view, but to *see* what they fix you need content that renders once and then drifts. The classic case is a Dataview `dataviewjs` block printing the current time.
+The refresh commands work on any view, but to *see* what they fix you need content that renders once and then drifts. The classic case is a `Dataview` `dataviewjs` block printing the current time.
 
-This vault cannot bundle Dataview - it is another author's plugin - so the button installs it from Obsidian's own Community plugins registry:
+This vault cannot bundle `Dataview` - it is another author's plugin - so the button installs it from Obsidian's own Community plugins registry:
 
 ```code-button
 ---
@@ -38,7 +38,7 @@ await require('/demoSetup.ts').installDataview(app);
 
 Manual equivalent: **Settings -> Community plugins -> Browse**, search for `Dataview`, install and enable it.
 
-With Dataview enabled, switch this note to **Reading** mode. The block below renders the moment you arrive and then never changes again - it is frozen at first render:
+With `Dataview` enabled, switch this note to **Reading** mode. The block below renders the moment you arrive and then never changes again - it is frozen at first render:
 
 ```dataviewjs
 dv.span(new Date().toString());

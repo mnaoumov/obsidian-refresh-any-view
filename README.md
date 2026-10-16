@@ -2,7 +2,7 @@
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov) [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-refresh-any-view)](https://github.com/mnaoumov/obsidian-refresh-any-view/releases) [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-refresh-any-view/total)](https://github.com/mnaoumov/obsidian-refresh-any-view/releases) [![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/mnaoumov/obsidian-refresh-any-view)
 
-[Obsidian](https://obsidian.md/) renders a view once, when it opens. So a note showing a Dataview query, an embedded note, output from another plugin, or simply the current time keeps showing its *original* render — the content is stale and the only way to update it is to close the tab and open it again, losing your place.
+[Obsidian](https://obsidian.md/) renders a view once, when it opens. So a note showing a `Dataview` query, an embedded note, output from another plugin, or simply the current time keeps showing its *original* render — the content is stale and the only way to update it is to close the tab and open it again, losing your place.
 
 This plugin re-renders any view **in place**, keeping your scroll position: from a toolbar button, from a command, or automatically on file change or on a timer.
 

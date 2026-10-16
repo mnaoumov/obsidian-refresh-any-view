@@ -5,11 +5,16 @@ import {
   configureCommunityPlugin,
   installConfigureEnableCommunityPlugin
 } from 'obsidian-dev-utils/obsidian/community-plugins';
+import {
+  asCodeBlock,
+  createFragmentWithCodeBlocks
+} from 'obsidian-dev-utils/obsidian/html-element';
 
 // The plugin's manifest id is `refresh-preview`, not the repo name — commands and `data.json` are
 // keyed by it.
 const PLUGIN_ID = 'refresh-preview';
 const DATAVIEW_PLUGIN_ID = 'dataview';
+const DATAVIEW_PLUGIN_NAME = 'Dataview';
 
 interface DemoSettingsPatch {
   autoRefreshIntervalInSeconds?: number;
@@ -34,7 +39,7 @@ export async function changeSettings(app: App, patch: DemoSettingsPatch): Promis
 }
 
 /**
- * Installs and enables Dataview, so this vault has some genuinely dynamic content to refresh.
+ * Installs and enables `Dataview`, so this vault has some genuinely dynamic content to refresh.
  *
  * Without it the `dataviewjs` block below renders as a plain code fence and there is nothing stale to
  * fix — which is the one thing this plugin's demo actually needs and the vault could not ship, since
@@ -44,9 +49,11 @@ export async function changeSettings(app: App, patch: DemoSettingsPatch): Promis
  * enable it.
  */
 export async function installDataview(app: App): Promise<void> {
-  new Notice('Installing Dataview...');
+  new Notice(createFragmentWithCodeBlocks(`Installing ${asCodeBlock(DATAVIEW_PLUGIN_NAME)}...`));
   await installConfigureEnableCommunityPlugin({ app, pluginId: DATAVIEW_PLUGIN_ID });
-  new Notice('Dataview is enabled. Switch this note to Reading mode to see a live timestamp.');
+  new Notice(createFragmentWithCodeBlocks(
+    `${asCodeBlock(DATAVIEW_PLUGIN_NAME)} is enabled. Switch this note to Reading mode to see a live timestamp.`
+  ));
 }
 
 /**
