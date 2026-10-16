@@ -53,22 +53,6 @@ import {
 } from 'vitest';
 
 /**
- * `App`, reduced to the font-size applier that `obsidian-typings` does not
- * declare. Setting `baseFontSize` alone changes nothing on screen.
- */
-interface FontSizeApp {
-  updateFontSize: (this: void) => void;
-}
-
-/**
- * `App`, reduced to the inline-title toggle that `obsidian-typings` does not
- * declare. Setting the config alone changes nothing on screen.
- */
-interface InlineTitleApp {
-  updateInlineTitleDisplay: (this: void) => void;
-}
-
-/**
  * What the button probe reports back, so a shot can assert the button is on
  * screen before it is photographed.
  */
@@ -145,12 +129,10 @@ beforeAll(async () => {
       // Otherwise the frame carries the note's title twice: once as the inline
       // title Obsidian renders above it, once as its own `# Dashboard`.
       app.vault.setConfig('showInlineTitle', false);
-      const inlineTitleApp: unknown = app;
-      (inlineTitleApp as InlineTitleApp).updateInlineTitleDisplay();
+      app.updateInlineTitleDisplay();
 
       app.vault.setConfig('baseFontSize', fontSizeInPixels);
-      const fontApp: unknown = app;
-      (fontApp as FontSizeApp).updateFontSize();
+      app.updateFontSize();
 
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
     },
