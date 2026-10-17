@@ -19,9 +19,29 @@ The plugin gives you a toolbar button and three commands:
 
 ## Try it
 
-1. Open this note (or any note) in **Reading** mode.
-2. Click the **Refresh view** button in the top-right toolbar, or run **Refresh Any View: Refresh active view** from the Command Palette (`Ctrl`/`Cmd` + `P`).
-3. The view re-renders in place - it does not close and reopen, and your scroll position is kept.
+First open this note in **Reading** mode:
+
+```code-button
+---
+caption: Open this note in Reading mode
+---
+await require('/demoSetup.ts').openInReadingMode(app, '01 Refresh a view.md');
+```
+
+Manual equivalent: switch the note (or any note) to Reading mode with the book icon in its top-right toolbar, or **Toggle reading view** (`Ctrl`/`Cmd` + `E`).
+
+Then refresh it:
+
+```code-button
+---
+caption: Refresh this note in place
+---
+require('/demoSetup.ts').refreshActiveView(app);
+```
+
+Manual equivalent: click the **Refresh view** button in the top-right toolbar, or run **Refresh Any View: Refresh active view** from the Command Palette (`Ctrl`/`Cmd` + `P`).
+
+The view re-renders in place - it does not close and reopen, and your scroll position is kept.
 
 ## Watch something actually go stale
 

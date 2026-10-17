@@ -51,6 +51,21 @@ export async function installDataview(app: App): Promise<void> {
 }
 
 /**
+ * Opens a note in the active tab in **Reading** mode, where rendered content is what a refresh redraws.
+ *
+ * Manual equivalent: open the note, then switch it to Reading mode with the book icon in the view's
+ * top-right toolbar, or **Toggle reading view** (`Ctrl`/`Cmd` + `E`).
+ */
+export async function openInReadingMode(app: App, notePath: string): Promise<void> {
+  const file = app.vault.getFileByPath(notePath);
+  if (!file) {
+    new Notice(`Note not found: ${notePath}`);
+    return;
+  }
+  await app.workspace.getLeaf(false).openFile(file, { active: true, state: { mode: 'preview' } });
+}
+
+/**
  * Runs the plugin's `Refresh active view` command.
  *
  * Manual equivalent: the circular-arrows button in the view's top-right toolbar, or
