@@ -8,11 +8,11 @@ The plugin gives you a toolbar button and three commands:
 
 - **Refresh view** button
   - the circular-arrows icon the plugin adds to every view's toolbar (top-right of the tab). Refreshes just that view.
-- **Refresh Any View: Refresh active view**
+- **`Refresh Any View`: Refresh active view**
   - refreshes the currently focused view.
-- **Refresh Any View: Refresh all visible views**
+- **`Refresh Any View`: Refresh all visible views**
   - refreshes every view you can currently see (all panes on screen).
-- **Refresh Any View: Refresh all open views**
+- **`Refresh Any View`: Refresh all open views**
   - refreshes every open view, including background tabs.
 
 ![The refresh button re-rendering a view in place](<./_assets/images/demo.gif>)
@@ -39,7 +39,7 @@ caption: Refresh this note in place
 require('/demoSetup.ts').refreshActiveView(app);
 ```
 
-Manual equivalent: click the **Refresh view** button in the top-right toolbar, or run **Refresh Any View: Refresh active view** from the Command Palette (`Ctrl`/`Cmd` + `P`).
+Manual equivalent: click the **Refresh view** button in the top-right toolbar, or run **`Refresh Any View`: Refresh active view** from the Command Palette (`Ctrl`/`Cmd` + `P`).
 
 The view re-renders in place - it does not close and reopen, and your scroll position is kept.
 
@@ -73,7 +73,7 @@ caption: Refresh active view
 require('/demoSetup.ts').refreshActiveView(app);
 ```
 
-Manual equivalent: click the circular-arrows button in this view's top-right toolbar, or run **Refresh Any View: Refresh active view** from the Command Palette.
+Manual equivalent: click the circular-arrows button in this view's top-right toolbar, or run **`Refresh Any View`: Refresh active view** from the Command Palette.
 
 ## Make it happen on its own
 
@@ -86,7 +86,7 @@ caption: Auto-refresh the active view every 2 seconds
 await require('/demoSetup.ts').changeSettings(app, { autoRefreshIntervalInSeconds: 2, autoRefreshMode: 'ActiveView' });
 ```
 
-Manual equivalent: set **Auto refresh mode** to `ActiveView` and **Auto refresh interval in seconds** to `2` in **Settings -> Community plugins -> Refresh Any View**.
+Manual equivalent: set **Auto refresh mode** to `ActiveView` and **Auto refresh interval in seconds** to `2` in **Settings -> Community plugins -> `Refresh Any View`**.
 
 Back in Reading mode, the timestamp now updates by itself. When you have seen enough, put it back:
 

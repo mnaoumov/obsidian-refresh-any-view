@@ -1,6 +1,6 @@
 # Settings
 
-Open **Settings -> Community plugins -> Refresh Any View** to configure automatic refreshing. Each option below lists the setting key stored in the plugin's `data.json`.
+Open **Settings -> Community plugins -> `Refresh Any View`** to configure automatic refreshing. Each option below lists the setting key stored in the plugin's `data.json`.
 
 ## Refresh quality
 
