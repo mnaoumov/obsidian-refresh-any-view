@@ -4,7 +4,7 @@ import { Notice } from 'obsidian';
 import {
   configureCommunityPlugin,
   installConfigureEnableCommunityPlugin
-} from 'obsidian-dev-utils/obsidian/community-plugins';
+} from '@mnaoumov/obsidian-lib/community-plugins';
 
 // The plugin's manifest id is `refresh-preview`, not the repo name — commands and `data.json` are
 // keyed by it.
