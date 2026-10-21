@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 3.6.8
+
+- fix: stop a Live Preview refresh duplicating a note's properties when the note has no body
+- build(deps): float brace-expansion, sharp and fast-uri past their advisories
+- docs: mark plugin names as code
+- docs(demo-vault): make the Try it section of 01 Refresh a view runnable from buttons
+- chore(github): point questions to Discussions from the new-issue page
+- ci: merge attesting release assets through the toolkit's reusable workflow
+
 ## 3.6.7
 
 - build: move off obsidian-dev-utils onto the @mnaoumov packages
