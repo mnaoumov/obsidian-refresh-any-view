@@ -96,11 +96,13 @@ export class RefreshAnyViewComponent extends LayoutReadyComponent {
             to: text.length
           }
         });
+        // Replace what is left rather than insert before it: for a note holding only properties, Obsidian filters
+        // the deletion above and keeps the frontmatter, so an insert would duplicate it.
         cm.dispatch({
           changes: {
             from: 0,
             insert: text,
-            to: 0
+            to: cm.state.doc.length
           },
           selection
         });
