@@ -2,7 +2,7 @@
 
 ## 3.6.8
 
-- fix: stop a Live Preview refresh duplicating a note's properties when the note has no body (re #11 - [BUG] Refresh empty note with properties in live preview appends yaml frontmatter)
+- fix: stop a Live Preview refresh duplicating a note's properties when the note has no body (re #11 - \[BUG\] Refresh empty note with properties in live preview appends yaml frontmatter)
 - build(deps): float brace-expansion, sharp and fast-uri past their advisories
 - docs: mark plugin names as code
 - docs(demo-vault): make the Try it section of 01 Refresh a view runnable from buttons
