@@ -27,7 +27,7 @@ import { RefreshAllVisibleViewsCommandHandler } from './command-handlers/refresh
 import { Plugin } from './plugin.ts';
 import { RefreshAnyViewComponent as RefreshAnyViewComponentImport } from './refresh-any-view-component.ts';
 
-// Dev-utils COLLABORATOR components added via `addChild` must be loadable (`addChild` eager-loads them).
+// The obsidian-lib COLLABORATOR components added via `addChild` must be loadable (`addChild` eager-loads them).
 // We don't need their real behavior here, so stub each as a thin loadable `Component` (allowed double).
 interface ObsidianComponentModule {
   Component: new () => object;
