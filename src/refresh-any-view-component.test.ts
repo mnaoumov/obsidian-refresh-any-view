@@ -36,7 +36,7 @@ import {
 } from './plugin-settings.ts';
 import { RefreshAnyViewComponent } from './refresh-any-view-component.ts';
 
-// `getCacheSafe` and `isFile` are dev-utils utilities. Stubbing their RETURN VALUE (not their algorithm)
+// `getCacheSafe` and `isFile` are obsidian-lib utilities. Stubbing their RETURN VALUE (not their algorithm)
 // is an allowed test double — the component's branches that depend on them are what we exercise.
 const mockGetCacheSafe = vi.fn((): Promise<undefined> => Promise.resolve(undefined));
 vi.mock('@mnaoumov/obsidian-lib/metadata-cache', async (importOriginal) => ({
