@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 3.6.9
+
+- test(demo-vault): floor `CodeScript Toolkit` at 15.0.0
+- docs: name obsidian-lib in the plugin test comment
+- chore(deps): move to obsidian-lib 6 and obsidian-dev-toolkit 5
+- docs: name obsidian-lib where comments said dev-utils
+- docs: shorten the debugging section
+- docs(changelog): escape the issue-title tags so markdownlint and cspell pass
+- docs(changelog): name the issue each released entry resolved
+- fix(demo-vault): load the demo setup helpers from @mnaoumov/obsidian-lib
+- docs(readme): lead the Debugging section with `Advanced Debug Mode`
+
 ## 3.6.8
 
 - fix: stop a Live Preview refresh duplicating a note's properties when the note has no body (re #11 - \[BUG\] Refresh empty note with properties in live preview appends yaml frontmatter)
