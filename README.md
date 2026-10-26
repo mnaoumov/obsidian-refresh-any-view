@@ -40,6 +40,13 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **Refresh in place** — a toolbar button on every view, plus commands for the active view, every visible view, or every open view. Your scroll position survives. [01 Refresh a view](<./demo-vault/01 Refresh a view.md>)
 - **Refresh automatically** — on file change, or on an interval, for content that should not wait for you to ask. [02 Settings](<./demo-vault/02 Settings.md>)
 
+## Similar plugins
+
+- [`NaviNote`](https://github.com/FootPrintStudio/obsidian-navinote) (not in the community directory) — a navigation bar above each markdown note, with back, hub shortcuts and previous/next in the folder, and a refresh button that re-renders the note in Reading view; this plugin refreshes any kind of view, not only markdown notes, and adds commands for the visible or all open views and automatic refresh on file change or on a timer.
+- [`Dataview Toggle`](https://community.obsidian.md/plugins/dataview-toggle) — pauses and resumes `Dataview`'s own automatic refresh, globally or per note, and refreshes every `Dataview` block when resumed; this plugin re-renders the whole view, whatever plugin produced its content.
+
+Last searched for similar plugins on 2026-10-26.
+
 ## Installation
 
 The plugin is available in [the official Community Plugins repository](https://community.obsidian.md/plugins/refresh-preview).
