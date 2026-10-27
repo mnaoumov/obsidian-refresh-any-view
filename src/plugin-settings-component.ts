@@ -7,6 +7,7 @@ import { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/p
 import { PluginSettings } from './plugin-settings.ts';
 
 interface LegacySettings extends PluginSettings {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Migration deletes this legacy property after copying its value.
   autoRefreshOnFileChange: boolean;
 }
 

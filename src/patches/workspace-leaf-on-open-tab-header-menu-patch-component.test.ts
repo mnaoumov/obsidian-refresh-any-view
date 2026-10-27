@@ -29,17 +29,17 @@ import type { RefreshAnyViewComponent } from '../refresh-any-view-component.ts';
 import { WorkspaceLeafOnOpenTabHeaderMenuPatchComponent } from './workspace-leaf-on-open-tab-header-menu-patch-component.ts';
 
 interface MenuItemTestable {
-  onClick__?: ($event: unknown) => void;
+  readonly onClick__?: ($event: unknown) => void;
 }
 
 interface MenuTestable {
   // `menuItems__`, not `items`: since obsidian-test-mocks 3.11.0 the latter also holds separators, and
   // every read here is of a member only a MenuItem has.
-  menuItems__: MenuItemTestable[];
+  readonly menuItems__: MenuItemTestable[];
 }
 
 interface RefreshAnyViewComponentStubSpec {
-  refreshView?: (view: ViewOriginal) => Promise<void>;
+  readonly refreshView?: (view: ViewOriginal) => Promise<void>;
 }
 
 /**
@@ -50,6 +50,7 @@ interface RefreshAnyViewComponentStubSpec {
  * does patch it, so the tests supply the same no-op for the patch to wrap and chain to.
  */
 interface WorkspaceLeafPrototypeTestable {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Tests install and remove the prototype hook around each test.
   onOpenTabHeaderMenu?: (this: void, $event: MouseEvent, parentEl: HTMLElement) => void;
 }
 

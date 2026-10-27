@@ -57,9 +57,9 @@ import {
  * screen before it is photographed.
  */
 interface RefreshButtonProbe {
-  hasButton: boolean;
-  hasOpenPrompt: boolean;
-  label: null | string;
+  readonly hasButton: boolean;
+  readonly hasOpenPrompt: boolean;
+  readonly label: null | string;
 }
 
 /**

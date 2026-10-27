@@ -30,7 +30,7 @@ import { RefreshAnyViewComponent as RefreshAnyViewComponentImport } from './refr
 // The obsidian-lib COLLABORATOR components added via `addChild` must be loadable (`addChild` eager-loads them).
 // We don't need their real behavior here, so stub each as a thin loadable `Component` (allowed double).
 interface ObsidianComponentModule {
-  Component: new () => object;
+  readonly Component: new () => object;
 }
 
 async function loadableComponentStub(): Promise<ReturnType<typeof vi.fn>> {
@@ -65,7 +65,7 @@ vi.mock('./plugin-settings-tab.ts', () => ({
 }));
 
 interface RefreshAnyViewComponentHolder {
-  refreshAnyViewComponent: RefreshAnyViewComponent;
+  readonly refreshAnyViewComponent: RefreshAnyViewComponent;
 }
 
 vi.mock('./command-handlers/refresh-active-view-command-handler.ts', () => ({

@@ -16,12 +16,12 @@ import type { RefreshAnyViewComponent } from '../refresh-any-view-component.ts';
 import { RefreshActiveViewCommandHandler } from './refresh-active-view-command-handler.ts';
 
 interface ExecutableHandler {
-  execute: () => Promise<void>;
+  readonly execute: () => Promise<void>;
 }
 
 interface RefreshAnyViewComponentStubSpec {
-  getActiveView?: () => null | View;
-  refreshView?: (view: View) => Promise<void>;
+  readonly getActiveView?: () => null | View;
+  readonly refreshView?: (view: View) => Promise<void>;
 }
 
 describe('RefreshActiveViewCommandHandler', () => {

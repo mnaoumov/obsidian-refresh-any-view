@@ -72,30 +72,30 @@ const ItemViewClass = castTo<new (leaf: WorkspaceLeaf) => ItemView>(ItemView);
 type AddActionFunction = (icon: string, title: string, callback: () => void) => HTMLElement;
 
 interface LeafStubSpec {
-  isDeferred?: boolean;
-  isVisible?: boolean;
-  loadIfDeferred?: () => Promise<void>;
-  rebuildView?: () => Promise<void>;
-  view?: ViewOriginal;
+  readonly isDeferred?: boolean;
+  readonly isVisible?: boolean;
+  readonly loadIfDeferred?: () => Promise<void>;
+  readonly rebuildView?: () => Promise<void>;
+  readonly view?: ViewOriginal;
 }
 
 interface Testable {
-  canAutoRefreshView: (view: ViewOriginal) => boolean;
-  executeKeepingFocus: (callback: () => Promise<void>) => Promise<void>;
-  handleLayoutChange: () => void;
-  handleModify: (file: TAbstractFile) => void;
-  isMatchingAutoRefreshMode: (view: ViewOriginal) => boolean;
-  isVisibleView: (view: ViewOriginal) => boolean;
-  loadDeferredViews: () => Promise<void>;
-  onLayoutReady: () => Promise<void>;
-  refreshViews: (checkView: (view: ViewOriginal) => boolean) => Promise<void>;
-  registerAutoRefreshTimer: () => void;
+  readonly canAutoRefreshView: (view: ViewOriginal) => boolean;
+  readonly executeKeepingFocus: (callback: () => Promise<void>) => Promise<void>;
+  readonly handleLayoutChange: () => void;
+  readonly handleModify: (file: TAbstractFile) => void;
+  readonly isMatchingAutoRefreshMode: (view: ViewOriginal) => boolean;
+  readonly isVisibleView: (view: ViewOriginal) => boolean;
+  readonly loadDeferredViews: () => Promise<void>;
+  readonly onLayoutReady: () => Promise<void>;
+  readonly refreshViews: (checkView: (view: ViewOriginal) => boolean) => Promise<void>;
+  readonly registerAutoRefreshTimer: () => void;
 }
 
 interface ViewStubMembers {
-  containerEl?: HTMLElement;
-  getMode?: () => string;
-  getViewType?: () => string;
+  readonly containerEl?: HTMLElement;
+  readonly getMode?: () => string;
+  readonly getViewType?: () => string;
 }
 
 /**
@@ -106,6 +106,7 @@ interface ViewStubMembers {
  * does patch it, so the tests supply the same no-op for the patch to wrap and chain to.
  */
 interface WorkspaceLeafPrototypeTestable {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Tests install and remove the prototype hook around each test.
   onOpenTabHeaderMenu?: (this: void, $event: MouseEvent, parentEl: HTMLElement) => void;
 }
 
@@ -701,95 +702,114 @@ describe('RefreshAnyViewComponent', () => {
 // --- Helpers ---
 
 interface CodeMirrorStub {
-  dispatch: () => void;
-  scrollDOM: ScrollDomStub;
-  state: EditorStateStub;
+  readonly dispatch: () => void;
+  readonly scrollDOM: ScrollDomStub;
+  readonly state: EditorStateStub;
 }
 
 interface DocStub {
-  length: number;
+  readonly length: number;
 }
 
 interface EditorStateStub {
-  doc: DocStub;
-  selection: object;
+  readonly doc: DocStub;
+  readonly selection: object;
 }
 
 interface FileViewAugment {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   containerEl: HTMLElement;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   file: unknown;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   getViewType: () => string;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   leaf: WorkspaceLeafOriginal;
 }
 
 interface FileViewSpec {
-  file: unknown;
-  viewType: string;
+  readonly file: unknown;
+  readonly viewType: string;
 }
 
 interface GenericViewSpec extends ViewStubMembers {
-  viewType?: string;
+  readonly viewType?: string;
 }
 
 interface ItemViewAugment {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   addAction: AddActionFunction;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   containerEl: HTMLElement;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   getViewType: () => string;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   leaf: WorkspaceLeafOriginal;
 }
 
 interface ItemViewSpec {
-  addAction: AddActionFunction;
-  leaf?: WorkspaceLeafOriginal;
+  readonly addAction: AddActionFunction;
+  readonly leaf?: WorkspaceLeafOriginal;
 }
 
 interface MarkdownEditModeStub {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   editor: MarkdownEditorStub;
 }
 
 interface MarkdownEditorStub {
-  cm: CodeMirrorStub;
+  readonly cm: CodeMirrorStub;
 }
 
 interface MarkdownViewAugment {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   containerEl: HTMLElement;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   currentMode: unknown;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   dirty: boolean;
-  editMode: MarkdownEditModeStub;
+  readonly editMode: MarkdownEditModeStub;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   file: unknown;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   leaf: WorkspaceLeafOriginal;
-  modes: Record<MarkdownViewMode, unknown>;
+  readonly modes: Record<MarkdownViewMode, unknown>;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   previewMode: PreviewModeStub;
 }
 
 type MarkdownViewMode = 'preview' | 'source';
 
 interface MarkdownViewSpec {
-  dispatch?: () => void;
-  file?: unknown;
-  mode: MarkdownViewMode;
-  rerender?: () => void;
-  viewType?: string;
+  readonly dispatch?: () => void;
+  readonly file?: unknown;
+  readonly mode: MarkdownViewMode;
+  readonly rerender?: () => void;
+  readonly viewType?: string;
 }
 
 interface PreviewModeStub {
-  rerender: () => void;
+  readonly rerender: () => void;
 }
 
 interface ScrollDomStub {
-  scrollTop: number;
+  readonly scrollTop: number;
 }
 
 interface TextFileViewAugment {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   containerEl: HTMLElement;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   dirty: boolean;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   leaf: WorkspaceLeafOriginal;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The fixture assigns this member after constructing the mock view.
   save: () => Promise<void>;
 }
 
 interface TextFileViewSpec {
-  dirty: boolean;
-  save: () => Promise<void>;
+  readonly dirty: boolean;
+  readonly save: () => Promise<void>;
 }
 
 function asyncNoop(): Promise<void> {
