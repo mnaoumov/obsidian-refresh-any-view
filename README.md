@@ -40,10 +40,14 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **Refresh in place** — a toolbar button on every view, plus commands for the active view, every visible view, or every open view. Your scroll position survives. [01 Refresh a view](<./demo-vault/01 Refresh a view.md>)
 - **Refresh automatically** — on file change, or on an interval, for content that should not wait for you to ask. [02 Settings](<./demo-vault/02 Settings.md>)
 
-## Similar plugins
+## See also
 
-- [`NaviNote`](https://github.com/FootPrintStudio/obsidian-navinote) (not in the community directory) — a navigation bar above each markdown note, with back, hub shortcuts and previous/next in the folder, and a refresh button that re-renders the note in Reading view; this plugin refreshes any kind of view, not only markdown notes, and adds commands for the visible or all open views and automatic refresh on file change or on a timer.
-- [`Dataview Toggle`](https://community.obsidian.md/plugins/dataview-toggle) — pauses and resumes `Dataview`'s own automatic refresh, globally or per note, and refreshes every `Dataview` block when resumed; this plugin re-renders the whole view, whatever plugin produced its content.
+[My other Obsidian resources](https://github.com/mnaoumov/obsidian-resources)
+
+| Plugin | Features | How `Refresh Any View` differs |
+| --- | --- | --- |
+| [`Dataview Toggle`](https://community.obsidian.md/plugins/dataview-toggle) | Pauses/resumes `Dataview` refresh globally or per note; refreshes its blocks | Broader refresh scope: whole views, regardless of content provider |
+| [`NaviNote`](https://github.com/FootPrintStudio/obsidian-navinote) | Unlisted; note navigation bar; Reading-view refresh button | Broader refresh scope: any view; visible/all views; file-change and timer refresh |
 
 Last searched for similar plugins on 2026-10-26.
 
@@ -92,10 +96,6 @@ Contributions are welcome — see [CONTRIBUTING](./CONTRIBUTING.md) to get set u
 <a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="60" width="217"></a>
 
 <!-- markdownlint-enable MD033 -->
-
-## My other Obsidian resources
-
-[See my other Obsidian resources](https://github.com/mnaoumov/obsidian-resources).
 
 ## License
 
