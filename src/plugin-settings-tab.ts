@@ -62,8 +62,8 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         desc: 'Interval in seconds to auto refresh the view(s).',
         name: 'Auto refresh interval (seconds)',
         render: (setting) => {
-          setting.addNumber((number) => {
-            this.bind({ propertyName: 'autoRefreshIntervalInSeconds', valueComponent: number })
+          setting.addNumber(($number) => {
+            this.bind({ propertyName: 'autoRefreshIntervalInSeconds', valueComponent: $number })
               .setMin(1);
           });
         },
