@@ -32,7 +32,7 @@ interface DropdownBindOptions {
 }
 
 interface VisibleRow {
-  visible: () => boolean;
+  readonly visible: () => boolean;
 }
 
 let app: AppOriginal;

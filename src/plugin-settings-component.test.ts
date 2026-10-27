@@ -13,7 +13,7 @@ import {
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 
 interface OnLoadRecordTestable {
-  onLoadRecord: (record: GenericObject) => Promise<void>;
+  readonly onLoadRecord: (record: GenericObject) => Promise<void>;
 }
 
 function createComponent(): PluginSettingsComponent {
