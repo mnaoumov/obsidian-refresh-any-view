@@ -6,6 +6,7 @@ import type {
 } from 'obsidian';
 
 import { CommandHandlerComponent } from '@mnaoumov/obsidian-lib/command-handlers/command-handler-component';
+import { OpenBugReportCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/open-bug-report-command-handler';
 import { OpenDemoVaultCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/open-demo-vault-command-handler';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
@@ -130,14 +131,15 @@ describe('Plugin', () => {
     }
   });
 
-  it('should register all four command handlers with the command handler component', async () => {
+  it('should register all five command handlers with the command handler component', async () => {
     await createLoadedPlugin();
 
-    // The base separately auto-registers its own handler, so assert the plugin's own registration by its four handlers rather than the total call count.
+    // The base separately auto-registers its own handler, so assert the plugin's own registration by its five handlers rather than the total call count.
     expect(buildPluginCommandHandlers()).toStrictEqual([
       expect.any(RefreshActiveViewCommandHandler),
       expect.any(RefreshAllVisibleViewsCommandHandler),
       expect.any(RefreshAllOpenViewsCommandHandler),
+      expect.any(OpenBugReportCommandHandler),
       expect.any(OpenDemoVaultCommandHandler)
     ]);
   });
