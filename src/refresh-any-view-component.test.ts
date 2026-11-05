@@ -44,10 +44,10 @@ vi.mock('@mnaoumov/obsidian-lib/metadata-cache', async (importOriginal) => ({
   getCacheSafe: (...$arguments: unknown[]): Promise<undefined> => mockGetCacheSafe(...castTo<[]>($arguments))
 }));
 
-const mockIsFile = vi.fn((_file: unknown): boolean => true);
+const isFileMock = vi.fn((_file: unknown): boolean => true);
 vi.mock('@mnaoumov/obsidian-lib/file-system', async (importOriginal) => ({
   ...await importOriginal<typeof import('@mnaoumov/obsidian-lib/file-system')>(),
-  isFile: (file: unknown): boolean => mockIsFile(file)
+  isFile: (file: unknown): boolean => isFileMock(file)
 }));
 
 // The component's OWN settings collaborator. It is passed via the constructor (not `addChild`ed), so a
@@ -404,7 +404,7 @@ describe('RefreshAnyViewComponent', () => {
     it('should do nothing when the modified target is not a file', () => {
       const component = createLoadedComponent();
       mockSettings.shouldAutoRefreshOnFileChange = true;
-      mockIsFile.mockReturnValue(false);
+      isFileMock.mockReturnValue(false);
 
       testable(component).handleModify(castTo<TAbstractFile>({ path: 'folder' }));
       expect(iterateAllLeaves).not.toHaveBeenCalled();
@@ -413,7 +413,7 @@ describe('RefreshAnyViewComponent', () => {
     it('should refresh matching FileViews when an open file is modified', async () => {
       const component = createLoadedComponent();
       mockSettings.shouldAutoRefreshOnFileChange = true;
-      mockIsFile.mockReturnValue(true);
+      isFileMock.mockReturnValue(true);
       const sharedFile = castTo<TAbstractFile>({ path: 'test.md' });
       const rebuildView = vi.fn(asyncNoop);
       const leaf = createLeafStub({ rebuildView });
