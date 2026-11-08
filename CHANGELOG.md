@@ -2,202 +2,216 @@
 
 ## 3.7.0
 
-- docs(readme): point bug reports at the Report a bug command
-- feat: add a Report a bug command
-- docs: add issue-filing instructions for AI agents
-- chore(github): give the bug form the field ids bug-report links prefill
-- build(deps): override re2js to ^2.9.1 for GHSA-gg6h-894w-4m9c
-- build(deps): bump `typescript-dev-toolkit` to ^5.2.0
-- build(deps): bump @mnaoumov/typescript-dev-toolkit to ^5.1.0
-- chore(deps): update vulnerable browser testing dependencies
-- chore: adopt shared keyword identifier lint rule
-- chore: adopt readonly interface members
-- docs(readme): combine related resources and plugin comparisons
-- docs: add a Similar plugins section to the README
+This release has 1 new feature and 4 documentation changes. 7 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### New
+
+- add a Report a bug command
+
+### Documentation
+
+- **readme:** point bug reports at the Report a bug command
+- add issue-filing instructions for AI agents
+- **readme:** combine related resources and plugin comparisons
+- add a Similar plugins section to the README
 
 ## 3.6.9
 
-- test(demo-vault): floor `CodeScript Toolkit` at 15.0.0
-- docs: name `obsidian-lib` in the plugin test comment
-- chore(deps): move to `obsidian-lib` 6 and `obsidian-dev-toolkit` 5
-- docs: name `obsidian-lib` where comments said dev-utils
-- docs: shorten the debugging section
-- docs(changelog): escape the issue-title tags so `markdownlint` and `cspell` pass
-- docs(changelog): name the issue each released entry resolved
-- fix(demo-vault): load the demo setup helpers from @mnaoumov/obsidian-lib
-- docs(readme): lead the Debugging section with `Advanced Debug Mode`
+This release has 1 fix and 6 documentation changes. 2 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Fixed
+
+- **demo-vault:** load the demo setup helpers from @mnaoumov/obsidian-lib
+
+### Documentation
+
+- name `obsidian-lib` in the plugin test comment
+- name `obsidian-lib` where comments said dev-utils
+- shorten the debugging section
+- **changelog:** escape the issue-title tags so `markdownlint` and `cspell` pass
+- **changelog:** name the issue each released entry resolved
+- **readme:** lead the Debugging section with `Advanced Debug Mode`
 
 ## 3.6.8
 
-- fix: stop a Live Preview refresh duplicating a note's properties when the note has no body (re #11 - \[BUG\] Refresh empty note with properties in live preview appends yaml frontmatter)
-- build(deps): float brace-expansion, sharp and fast-uri past their advisories
-- docs: mark plugin names as code
-- docs(demo-vault): make the Try it section of 01 Refresh a view runnable from buttons
-- chore(github): point questions to Discussions from the new-issue page
-- ci: merge attesting release assets through the toolkit's reusable workflow
+This release has 1 fix and 2 documentation changes. 3 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Fixed
+
+- stop a Live Preview refresh duplicating a note's properties when the note has no body (re #11 - \[BUG\] Refresh empty note with properties in live preview appends yaml frontmatter)
+
+### Documentation
+
+- mark plugin names as code
+- **demo-vault:** make the Try it section of 01 Refresh a view runnable from buttons
 
 ## 3.6.7
 
-- build: move off `obsidian-dev-utils` onto the @mnaoumov packages
-- chore(`cspell`): accept Sidedock from the `obsidian-typings` declarations
-- docs: mark plugin names as code
-- test: merge using the `obsidian-typings` declarations of Obsidian internals
+This release has 1 documentation change. 3 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Documentation
+
+- mark plugin names as code
 
 ## 3.6.6
 
-- test(screenshots): merge setting the desktop capture theme with applyObsidianTheme
-- fix(screenshots): merge the reproducible mobile command-palette frame
-- chore(deps): merge the `obsidian-integration-testing` 17 float
-- chore(deps): merge the `obsidian-test-mocks` 7 float
-- fix(test): merge the headless demo-vault toolkit install
-- fix(deps): restore the lockfile's missing resolved and integrity fields
-- fix(deps): float devalue to 5.9.4, clearing GHSA-9rgm-9g3h-6x36
-- build(`markdownlint`): forbid hard-wrapped markdown paragraphs
-- chore(deps): drop the dead markdown-it override
-- chore(deps): drop the dead js-yaml override
-- style(comments): stop capitalizing the middle of a wrapped comment
-- docs: replace the private rule-id citations with what they assert
-- docs(changelog): name `obsidian-dev-utils` by its package name
-- docs: replace the private tracker references with what they pointed at
-- chore(deps): move to `obsidian-dev-utils` 103
-- test(integration): take the palette frame with the soft keyboard up
-- test: bring the capture suite's wait ceilings under the transport's per-eval cap
-- chore: adopt the `npm run gate` branch gate
-- docs: say where the debug command is run
-- test: bring the in-closure wait ceiling under the transport's per-eval cap
-- refactor(android): drive the Android suites with trusted input
-- docs: name the unversioned demo-vault asset and the folder it unzips into
-- chore: make the LICENSE copyright line checkable by the linter and guard it against the year roll-over
-- test(test-mocks): seed onOpenTabHeaderMenu, and drop the app.plugins stub
-- fix(build): wire build:compile to buildCompile and drop the duplicate leaf script
+This release has 5 fixes and 5 documentation changes. 15 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Fixed
+
+- **screenshots:** merge the reproducible mobile command-palette frame
+- **test:** merge the headless demo-vault toolkit install
+- **deps:** restore the lockfile's missing resolved and integrity fields
+- **deps:** float devalue to 5.9.4, clearing GHSA-9rgm-9g3h-6x36
+- **build:** wire build:compile to buildCompile and drop the duplicate leaf script
+
+### Documentation
+
+- replace the private rule-id citations with what they assert
+- **changelog:** name `obsidian-dev-utils` by its package name
+- replace the private tracker references with what they pointed at
+- say where the debug command is run
+- name the unversioned demo-vault asset and the folder it unzips into
 
 ## 3.6.5
 
-- chore(deps): sweep caret-ranged dependencies to latest
-- fix(deps): move to `obsidian-integration-testing` 11 and `obsidian-dev-utils` 96.5.2
-- fix(deps): drop the brace-expansion file: override that breaks a clean install
-- docs: point plugin-directory links at community.obsidian.md
+This release has 2 fixes and 1 documentation change. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
+
+### Fixed
+
+- **deps:** move to `obsidian-integration-testing` 11 and `obsidian-dev-utils` 96.5.2
+- **deps:** drop the brace-expansion file: override that breaks a clean install
+
+### Documentation
+
+- point plugin-directory links at community.obsidian.md
 
 ## 3.6.4
 
-- docs(demo-vault): unwrap the notes so Obsidian stops rendering a break per line
-- docs(readme): render the same in Obsidian's plugin page as on `GitHub`
-- chore: update libs
-- chore: update `obsidian-dev-utils` to 94.6.1
-- chore: update `obsidian-dev-utils` to 94.6.0
-- fix: override deepmerge-ts to clear GHSA-ggr8-5vv4-36mx
-- test: gate the demo vault by clicking every code button
-- chore: teach `cspell` the advisory wording
-- chore: update libs
-- docs: capture the mobile screenshot set for refresh-any-view
-- docs(demo-vault): give the demo vault its code buttons
-- docs: capture the community-store screenshot set
+This release has 1 fix and 5 documentation changes. 6 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Fixed
+
+- override deepmerge-ts to clear GHSA-ggr8-5vv4-36mx
+
+### Documentation
+
+- **demo-vault:** unwrap the notes so Obsidian stops rendering a break per line
+- **readme:** render the same in Obsidian's plugin page as on `GitHub`
+- capture the mobile screenshot set for refresh-any-view
+- **demo-vault:** give the demo vault its code buttons
+- capture the community-store screenshot set
 
 ## 3.6.3
 
-- docs: make the demo vault the documentation, in the standard layout
-- feat(demo-vault): migrate to `obsidian-dev-utils` 93.3.1 and adopt the authoring convention
+This release has 1 new feature and 1 documentation change.
+
+### New
+
+- **demo-vault:** migrate to `obsidian-dev-utils` 93.3.1 and adopt the authoring convention
+
+### Documentation
+
+- make the demo vault the documentation, in the standard layout
 
 ## 3.6.2
 
-- chore: update libs and adopt `obsidian-integration-testing` 10
-- test: read `Menu.menuItems__` instead of `Menu.items__`
+This release has maintenance changes only. 2 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
 
 ## 3.6.1
 
-- chore: update libs
-- chore: update libs
-- chore(`vitest`): adopt the shared Obsidian plugin `vitest` configuration
+This release has maintenance changes only. 3 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
 
 ## 3.6.0
 
-- refactor(settings): move the settings tab onto the declarative settings API
-- chore: update libs and clear the `npm` audit
-- docs: fix the demo vault download instructions
+This release has 1 documentation change. 2 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Documentation
+
+- fix the demo vault download instructions
 
 ## 3.5.28
 
-- chore: update libs
-- chore: update libs
+This release has maintenance changes only. 2 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
 
 ## 3.5.27
 
-- chore: update libs
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.26
 
-- chore: update libs
-- chore(demo-vault): drop committed Invocables placeholder
-- fix(demo-vault): export invoke() from startup script; add Invocables folder
+This release has 1 fix. 2 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Fixed
+
+- **demo-vault:** export invoke() from startup script; add Invocables folder
 
 ## 3.5.25
 
-- docs: standardize demo-vault README
-- docs: drop per-plugin demo-vault setup notes (bootstrap covered by the `obsidian-dev-utils` harness)
-- docs(demo-vault): create the `Refresh Any View` demo vault
-- chore: update libs
-- chore: update libs
-- docs: migrate to AGENTS.md
+This release has 4 documentation changes. 2 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Documentation
+
+- standardize demo-vault README
+- drop per-plugin demo-vault setup notes (bootstrap covered by the `obsidian-dev-utils` harness)
+- **demo-vault:** create the `Refresh Any View` demo vault
+- migrate to AGENTS.md
 
 ## 3.5.24
 
-- chore: update libs
-- chore: update `obsidian-dev-utils` to 85.0.0
-- build: lock typescript to 6.0.3
-- test: wire integration-testing vitest-setup into integration projects
-- chore: update libs
-- chore: sort tsconfig types
+This release has maintenance changes only. 6 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
 
 ## 3.5.23
 
-- refactor: new template
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.22
 
-- refactor: new template
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.21
 
-- chore: update libs
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.20
 
-- chore: update template
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.19
 
-- chore: update template
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.18
 
-- refactor: commands
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.17
 
-- chore: update libs
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.16
 
-- chore: update libs
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.15
 
-- chore: update libs
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.14
 
-- chore: update libs
-- chore: lint
-- chore: enable `markdownlint`
+This release has maintenance changes only. 3 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
 
 ## 3.5.13
 
-- fix: build
-- chore: update libs
+This release has 1 fix. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
+
+### Fixed
+
+- build
 
 ## 3.5.12
 
-- chore: enable conventional commits
+This release has maintenance changes only. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
 
 ## 3.5.11
 
@@ -245,26 +259,50 @@
 
 ## 3.5.0
 
+This release has 1 other change.
+
+### Other changes
+
 - restoreScrollPosition for all views
 
 ## 3.4.0
+
+This release has 1 other change.
+
+### Other changes
 
 - shouldUseQuickMarkdownViewRefresh (#7)
 
 ## 3.3.1
 
+This release has 1 other change.
+
+### Other changes
+
 - Fix manual refresh button (#7)
 
 ## 3.3.0
+
+This release has 2 other changes.
+
+### Other changes
 
 - Update editor without flickering
 - Update md file after its cache synced
 
 ## 3.2.1
 
+This release has 1 other change.
+
+### Other changes
+
 - Add examples and docs
 
 ## 3.2.0
+
+This release has 6 other changes.
+
+### Other changes
 
 - Add auto refresh mode
 - Include/exclude view types
@@ -275,12 +313,20 @@
 
 ## 3.1.0
 
+This release has 4 other changes.
+
+### Other changes
+
 - Avoid flickering for markdown views in preview mode
 - shouldAutoRefreshMarkdownViewInSourceMode
 - Add refresh all views commands
 - Handle modify only when fully loaded
 
 ## 3.0.0
+
+This release has 3 other changes.
+
+### Other changes
 
 - Rebrand
 - Refresh any view
@@ -312,6 +358,10 @@
 
 ## 2.0.13
 
+This release has 1 other change.
+
+### Other changes
+
 - New template
 
 ## 2.0.12
@@ -320,22 +370,42 @@
 
 ## 2.0.11
 
+This release has 1 other change.
+
+### Other changes
+
 - Update template
 
 ## 2.0.10
+
+This release has 2 other changes.
+
+### Other changes
 
 - Update BRAT links
 - Switch to number component
 
 ## 2.0.9
 
+This release has 1 other change.
+
+### Other changes
+
 - Fix validation
 
 ## 2.0.8
 
+This release has 1 other change.
+
+### Other changes
+
 - Lint
 
 ## 2.0.7
+
+This release has 1 other change.
+
+### Other changes
 
 - Format
 
@@ -353,6 +423,10 @@
 
 ## 2.0.3
 
+This release has 1 other change.
+
+### Other changes
+
 - Avoid default exports
 
 ## 2.0.2
@@ -365,27 +439,51 @@
 
 ## 2.0.0
 
+This release has 2 other changes.
+
+### Other changes
+
 - Add auto refresh
 - Ensure view is loaded
 
 ## 1.3.0
+
+This release has 2 other changes.
+
+### Other changes
 
 - Use single button click handler
 - Set tooltip
 
 ## 1.2.0
 
+This release has 1 other change.
+
+### Other changes
+
 - Another memory leak fix
 
 ## 1.1.0
+
+This release has 1 other change.
+
+### Other changes
 
 - Improve memory leak
 
 ## 1.0.2
 
+This release has 1 other change.
+
+### Other changes
+
 - Fix plugin validation
 
 ## 1.0.1
+
+This release has 1 other change.
+
+### Other changes
 
 - Update description
 
