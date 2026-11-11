@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 3.7.1
+
+This release has 1 fix and 3 documentation changes. 2 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Fixed
+
+- **deps:** override glob to 14 to clear GHSA-3g3m-2fjr-6pw4
+
+### Documentation
+
+- **changelog:** regroup the published release notes for readers
+- make issue attachments optional and strongly encouraged
+- link to the Obsidian resources page
+
 ## 3.7.0
 
 This release has 1 new feature and 4 documentation changes. 7 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
